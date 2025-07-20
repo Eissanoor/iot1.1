@@ -1,0 +1,20 @@
+{
+  "name": "iot-server",
+  "version": "1.0.0",
+  "description": "IoT Server for Temperature and Humidity Monitoring",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongoose": "^8.16.1",
+    "node-cron": "^4.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const tempHumidityController = require('../controllers/temperatureHumidityController');
+
+// Routes for temperature data
+router.post('/', tempHumidityController.createData);
+router.get('/', tempHumidityController.getAllData);
+router.get('/latest', tempHumidityController.getLatestData);
+
+module.exports = router; 
