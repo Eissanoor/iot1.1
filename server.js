@@ -21,6 +21,7 @@ const soilMoistureRoutes = require('./routes/soilMoistureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const fuelLevelRoutes = require('./routes/fuelLevelRoutes');
+const assetRoutes = require('./routes/assetRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -112,6 +113,7 @@ async function startServer() {
     app.use('/api/admin', adminRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/fuel-level', fuelLevelRoutes);
+    app.use('/api/assets', assetRoutes);
 
     // Start server
     app.listen(PORT, () => {
