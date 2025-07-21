@@ -26,6 +26,16 @@ const cleanupConfig = {
     },
     maxRecords: 80,
     deleteCount: 30
+  },
+  fuelLevel: {
+    model: {
+      count: () => prisma.fuelLevel.count(),
+      findMany: (options) => prisma.fuelLevel.findMany(options),
+      deleteMany: (where) => prisma.fuelLevel.deleteMany(where),
+      modelName: 'FuelLevel'
+    },
+    maxRecords: 100,  // Keep more fuel level records for trend analysis
+    deleteCount: 40
   }
   // Add more collections here as needed
 };

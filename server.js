@@ -10,6 +10,7 @@ const prisma = require('./prisma/client');
 // Import controllers for cron jobs
 const tempHumidityController = require('./controllers/temperatureHumidityController');
 const soilMoistureController = require('./controllers/soilMoistureController');
+const fuelLevelController = require('./controllers/fuelLevelController');
 
 // Import cleanup service
 const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = require('./services/cleanupService');
@@ -19,6 +20,7 @@ const temperatureRoutes = require('./routes/temperatureHumidityRoutes');
 const soilMoistureRoutes = require('./routes/soilMoistureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
+const fuelLevelRoutes = require('./routes/fuelLevelRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -27,6 +29,37 @@ const PORT = process.env.PORT || 2507;
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
+
+// Fuel level simulation variables
+let currentFuelLevel = 100; // Starting at 100%
+const fuelCapacity = 100;   // Maximum capacity
+const fuelDecreaseRate = 0.5; // Decrease rate per interval
+
+// Function to simulate decreasing fuel level
+async function simulateFuelDecrease() {
+  try {
+    // Decrease fuel level by random amount between 0.1 and fuelDecreaseRate
+    const decrease = Math.random() * fuelDecreaseRate + 0.1;
+    currentFuelLevel = Math.max(0, currentFuelLevel - decrease);
+    
+    // Save the new fuel level to the database
+    await prisma.fuelLevel.create({
+      data: {
+        level: currentFuelLevel,
+        capacity: fuelCapacity
+      }
+    });
+    
+    console.log(`Fuel level updated: ${currentFuelLevel.toFixed(2)}%`);
+    
+    // If fuel level is low, log a warning
+    if (currentFuelLevel < 20) {
+      console.log('WARNING: Fuel level is low!');
+    }
+  } catch (error) {
+    console.error('Error updating fuel level:', error);
+  }
+}
 
 // Initialize server and connect to database
 async function startServer() {
@@ -53,6 +86,11 @@ async function startServer() {
       soilMoistureController.saveSoilMoistureData();
     });
 
+    // Schedule fuel level simulation every 10 seconds
+    cron.schedule('*/10 * * * * *', () => {
+      simulateFuelDecrease();
+    });
+
     // Schedule regular cleanup cron job to run every minute
     cron.schedule('* * * * *', () => {
       cleanupAllCollections()
@@ -73,6 +111,7 @@ async function startServer() {
     app.use('/api/soil-moisture', soilMoistureRoutes);
     app.use('/api/admin', adminRoutes);
     app.use('/api/auth', authRoutes);
+    app.use('/api/fuel-level', fuelLevelRoutes);
 
     // Start server
     app.listen(PORT, () => {
