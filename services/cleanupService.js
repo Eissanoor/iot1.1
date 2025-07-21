@@ -2,19 +2,28 @@
  * Service for cleaning up old data from all collections
  */
 
-const Temperature = require('../models/temperatureData');
-const SoilMoistureData = require('../models/soilMoistureData');
+const prisma = require('../prisma/client');
 const { cleanupCollection } = require('../utils/cleanupUtils');
 
 // Configuration for each collection
 const cleanupConfig = {
   temperature: {
-    model: Temperature,
+    model: {
+      count: () => prisma.temperature.count(),
+      findMany: (options) => prisma.temperature.findMany(options),
+      deleteMany: (where) => prisma.temperature.deleteMany(where),
+      modelName: 'Temperature'
+    },
     maxRecords: 80,  // Maximum records to keep
     deleteCount: 30  // Number of records to delete when threshold is reached
   },
   soilMoisture: {
-    model: SoilMoistureData,
+    model: {
+      count: () => prisma.soilMoistureData.count(),
+      findMany: (options) => prisma.soilMoistureData.findMany(options),
+      deleteMany: (where) => prisma.soilMoistureData.deleteMany(where),
+      modelName: 'SoilMoistureData'
+    },
     maxRecords: 80,
     deleteCount: 30
   }
@@ -56,7 +65,7 @@ const checkForLargeCollections = async () => {
   // Process each collection
   for (const [name, config] of Object.entries(cleanupConfig)) {
     try {
-      const count = await config.model.countDocuments();
+      const count = await config.model.count();
       
       // If collection is significantly larger than maxRecords (e.g., 50% more)
       if (count > config.maxRecords * 1.5) {

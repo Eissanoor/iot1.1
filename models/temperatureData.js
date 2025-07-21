@@ -1,10 +1,35 @@
-const mongoose = require('mongoose');
+const prisma = require('../prisma/client');
 
-// Temperature Data Schema
-const temperatureSchema = new mongoose.Schema({
-  temperature: Number,
-  humidity: Number,
-  timestamp: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model('Temperature', temperatureSchema); 
+// Export Prisma Temperature model operations
+module.exports = {
+  create: (data) => {
+    return prisma.temperature.create({
+      data: {
+        temperature: data.temperature,
+        humidity: data.humidity
+      }
+    });
+  },
+  findMany: (options = {}) => {
+    const { skip, take, orderBy = { timestamp: 'desc' } } = options;
+    return prisma.temperature.findMany({
+      skip,
+      take,
+      orderBy
+    });
+  },
+  count: () => {
+    return prisma.temperature.count();
+  },
+  findFirst: (options = {}) => {
+    const { orderBy = { timestamp: 'desc' } } = options;
+    return prisma.temperature.findFirst({
+      orderBy
+    });
+  },
+  deleteMany: (where) => {
+    return prisma.temperature.deleteMany({
+      where
+    });
+  }
+}; 

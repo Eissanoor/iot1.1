@@ -1,0 +1,26 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// Temperature and Humidity data model
+model Temperature {
+  id          Int      @id @default(autoincrement())
+  temperature Float
+  humidity    Float
+  timestamp   DateTime @default(now())
+}
+
+// Soil Moisture data model
+model SoilMoistureData {
+  id        Int      @id @default(autoincrement())
+  moisture  Float
+  timestamp DateTime @default(now())
+}

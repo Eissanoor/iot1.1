@@ -1,103 +1,113 @@
-# Arduino Sensor Data Backend
+# IoT Sensor Data Server
 
-This is a Node.js backend server for collecting and serving sensor data from Arduino devices.
-
-## Project Structure
-
-```
-backend/
-  ├── controllers/
-  │   ├── temperatureHumidityController.js
-  │   ├── soilMoistureController.js
-  │   └── ... (other sensor controllers)
-  ├── models/
-  │   ├── temperatureData.js
-  │   ├── soilMoistureData.js
-  │   └── ... (other sensor models)
-  ├── routes/
-  │   ├── temperatureHumidityRoutes.js
-  │   ├── soilMoistureRoutes.js
-  │   ├── adminRoutes.js
-  │   └── ... (other sensor routes)
-  ├── services/
-  │   └── cleanupService.js
-  ├── utils/
-  │   ├── sensorUtils.js
-  │   └── cleanupUtils.js
-  ├── server.js
-  ├── package.json
-  └── package-lock.json
-```
+A Node.js server for collecting, storing, and retrieving IoT sensor data for temperature, humidity, and soil moisture sensors.
 
 ## Features
 
-- Collects and stores temperature and humidity data
-- Collects and stores soil moisture data
-- Simulates realistic sensor data patterns
-- RESTful API for accessing sensor data
-- Pagination support for data retrieval
-- Automatic cleanup of old data when collections exceed size limits
+- REST API for temperature, humidity, and soil moisture data
+- Automatic data generation for testing/development
+- Automatic cleanup of old data
+- SQL Server database with Prisma ORM
+
+## Prerequisites
+
+- Node.js 14+ and npm
+- SQL Server (local or remote)
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Configure your SQL Server connection:
+   Edit the `.env` file and update the `DATABASE_URL` with your SQL Server credentials.
+   
+   **SQL Server Connection String Formats:**
+   
+   - Windows Authentication:
+     ```
+     DATABASE_URL="sqlserver://localhost:1433;database=iot-sensor-data;integratedSecurity=true;trustServerCertificate=true"
+     ```
+   
+   - SQL Authentication:
+     ```
+     DATABASE_URL="sqlserver://localhost:1433;database=iot-sensor-data;user=sa;password=YourPassword;trustServerCertificate=true"
+     ```
+   
+   - Azure SQL:
+     ```
+     DATABASE_URL="sqlserver://yourserver.database.windows.net:1433;database=iot-sensor-data;user=username;password=password;encrypt=true;trustServerCertificate=false"
+     ```
+
+4. Check your database connection:
+   ```
+   npm run check-db-url
+   ```
+
+5. Run the setup script to initialize the database:
+   ```
+   npm run setup
+   ```
+   This will:
+   - Generate the Prisma client
+   - Create the database tables
+   - Set up the initial schema
+
+6. (Optional) Seed the database with test data:
+   ```
+   npm run seed-db
+   ```
+
+## Running the Server
+
+Start the server:
+```
+npm start
+```
+
+For development with auto-reload:
+```
+npm run dev
+```
+
+The server will run on http://localhost:3000 by default.
+
+## Available Scripts
+
+- `npm start` - Start the server
+- `npm run dev` - Start the server with auto-reload (nodemon)
+- `npm run setup` - Initialize the database and generate Prisma client
+- `npm run check-db-url` - Check if your DATABASE_URL is valid
+- `npm run test-db` - Test the database connection
+- `npm run seed-db` - Seed the database with test data
 
 ## API Endpoints
 
 ### Temperature and Humidity
 
-- `POST /api/temperature` - Submit new temperature and humidity readings
-- `GET /api/temperature` - Get all temperature and humidity readings (with pagination)
-- `GET /api/temperature/latest` - Get the latest temperature and humidity reading
+- `GET /api/temperature` - Get all temperature/humidity records (with pagination)
+- `GET /api/temperature/latest` - Get latest temperature/humidity reading
+- `POST /api/temperature` - Submit new temperature/humidity data
 
 ### Soil Moisture
 
-- `POST /api/soil-moisture` - Submit new soil moisture reading
-- `GET /api/soil-moisture` - Get all soil moisture readings (with pagination)
-- `GET /api/soil-moisture/latest` - Get the latest soil moisture reading
+- `GET /api/soil-moisture` - Get all soil moisture records (with pagination)
+- `GET /api/soil-moisture/latest` - Get latest soil moisture reading
+- `POST /api/soil-moisture` - Submit new soil moisture data
 
-### Admin Routes
+### Admin
 
-- `POST /api/admin/cleanup` - Manually trigger regular cleanup of old data
-- `POST /api/admin/cleanup/force` - Force aggressive cleanup for large collections
-- `GET /api/admin/collections/size` - Get current size of all collections
-- `GET /api/admin/cleanup/config` - Get current cleanup configuration
+- `POST /api/admin/cleanup` - Manually trigger data cleanup
+- `POST /api/admin/cleanup/force` - Force aggressive cleanup
+- `GET /api/admin/collections/size` - Get collection sizes
+- `GET /api/admin/cleanup/config` - Get cleanup configuration
 - `PUT /api/admin/cleanup/config` - Update cleanup configuration
 
-## Data Cleanup
+## Data Simulation
 
-The system automatically cleans up old data when collections exceed a certain size:
-
-- Default threshold: 80 records
-- Default cleanup amount: 30 oldest records
-- Regular cleanup runs every minute via cron job
-- Aggressive cleanup check runs every 5 minutes for large collections
-- Initial cleanup runs when server starts
-- For collections with 150+ records, the system will aggressively clean up to bring the size down to the configured limit
-- Configuration can be adjusted via admin API
-
-## Adding New Sensor Types
-
-To add a new sensor type to the system, follow these steps:
-
-1. Create a new model file in the `models/` directory
-2. Create a new controller file in the `controllers/` directory
-3. Create a new routes file in the `routes/` directory
-4. Update `server.js` to:
-   - Import the new controller and routes
-   - Set up any necessary cron jobs
-   - Register the new routes
-5. Update `services/cleanupService.js` to include the new collection in cleanup
-
-### Example: Adding Light Sensor
-
-1. Create `models/lightData.js`
-2. Create `controllers/lightController.js`
-3. Create `routes/lightRoutes.js`
-4. Update `server.js` to include the new sensor type
-5. Add the light sensor to the cleanup configuration
-
-## Running the Server
-
-```
-npm install
-node server.js
-```
-
-The server will run on port 3000 by default. 
+The server automatically generates simulated sensor data:
+- Temperature/humidity data every 3 seconds
+- Soil moisture data every 5 seconds
+- Weather scenarios change randomly to simulate real-world conditions 

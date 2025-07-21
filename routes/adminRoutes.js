@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { cleanupAllCollections, cleanupConfig, checkForLargeCollections } = require('../services/cleanupService');
+const prisma = require('../prisma/client');
 
 // Route to manually trigger cleanup of all collections
 router.post('/cleanup', async (req, res) => {
@@ -36,9 +37,9 @@ router.get('/collections/size', async (req, res) => {
     const sizes = {};
     
     for (const [key, config] of Object.entries(cleanupConfig)) {
-      const count = await config.model.countDocuments();
+      const count = await config.model.count();
       sizes[key] = {
-        collection: config.model.collection.name,
+        collection: config.model.modelName,
         count,
         maxRecords: config.maxRecords,
         status: count > config.maxRecords ? 'exceeds limit' : 'within limit'
@@ -59,7 +60,7 @@ router.get('/cleanup/config', (req, res) => {
   
   for (const [key, config] of Object.entries(cleanupConfig)) {
     configInfo[key] = {
-      collection: config.model.collection.name,
+      collection: config.model.modelName,
       maxRecords: config.maxRecords,
       deleteCount: config.deleteCount
     };
@@ -76,7 +77,7 @@ router.put('/cleanup/config', async (req, res) => {
     // Find the configuration for the specified collection
     let found = false;
     for (const [key, config] of Object.entries(cleanupConfig)) {
-      if (config.model.collection.name === collection) {
+      if (config.model.modelName === collection) {
         // Update configuration
         if (maxRecords !== undefined) config.maxRecords = parseInt(maxRecords);
         if (deleteCount !== undefined) config.deleteCount = parseInt(deleteCount);

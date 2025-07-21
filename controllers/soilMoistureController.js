@@ -58,11 +58,10 @@ const saveSoilMoistureData = async () => {
   try {
     const { moisture } = generateSoilMoistureData();
     
-    const newData = new SoilMoistureData({
+    await SoilMoistureData.create({
       moisture
     });
     
-    await newData.save();
     console.log(`Data saved: Soil Moisture: ${moisture}%`);
   } catch (error) {
     console.error('Error saving soil moisture data:', error);
@@ -74,11 +73,10 @@ exports.createData = async (req, res) => {
   try {
     const { moisture } = req.body;
     
-    const newData = new SoilMoistureData({
+    await SoilMoistureData.create({
       moisture: parseFloat(moisture)
     });
     
-    await newData.save();
     res.status(201).json({ message: 'Soil moisture data saved successfully' });
   } catch (error) {
     console.error('Error saving soil moisture data:', error);
@@ -93,14 +91,14 @@ exports.getAllData = async (req, res) => {
     const skip = parseInt(req.query.skip) || 0;
     
     // Get data with pagination, sort by timestamp descending (newest first)
-    const data = await SoilMoistureData
-      .find({})
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limit);
+    const data = await SoilMoistureData.findMany({
+      skip: skip,
+      take: limit,
+      orderBy: { timestamp: 'desc' }
+    });
     
     // Get total count
-    const count = await SoilMoistureData.countDocuments();
+    const count = await SoilMoistureData.count();
     
     res.status(200).json({
       count,
@@ -114,9 +112,9 @@ exports.getAllData = async (req, res) => {
 
 exports.getLatestData = async (req, res) => {
   try {
-    const latestData = await SoilMoistureData
-      .findOne({})
-      .sort({ timestamp: -1 });
+    const latestData = await SoilMoistureData.findFirst({
+      orderBy: { timestamp: 'desc' }
+    });
       
     if (!latestData) {
       return res.status(404).json({ message: 'No soil moisture data found' });

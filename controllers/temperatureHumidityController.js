@@ -65,12 +65,11 @@ const saveSensorData = async () => {
   try {
     const { temperature, humidity } = generateSensorData();
     
-    const newData = new Temperature({
+    await Temperature.create({
       temperature,
       humidity
     });
     
-    await newData.save();
     console.log(`Data saved: Temperature: ${temperature}°C, Humidity: ${humidity}%`);
   } catch (error) {
     console.error('Error saving data:', error);
@@ -82,12 +81,11 @@ exports.createData = async (req, res) => {
   try {
     const { temperature, humidity } = req.body;
     
-    const newData = new Temperature({
+    await Temperature.create({
       temperature: parseFloat(temperature),
       humidity: parseFloat(humidity)
     });
     
-    await newData.save();
     res.status(201).json({ message: 'Data saved successfully' });
   } catch (error) {
     console.error('Error saving data:', error);
@@ -102,14 +100,14 @@ exports.getAllData = async (req, res) => {
     const skip = parseInt(req.query.skip) || 0;
     
     // Get data with pagination, sort by timestamp descending (newest first)
-    const data = await Temperature
-      .find({})
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limit);
+    const data = await Temperature.findMany({
+      skip: skip,
+      take: limit,
+      orderBy: { timestamp: 'desc' }
+    });
     
     // Get total count
-    const count = await Temperature.countDocuments();
+    const count = await Temperature.count();
     
     res.status(200).json({
       count,
@@ -123,9 +121,9 @@ exports.getAllData = async (req, res) => {
 
 exports.getLatestData = async (req, res) => {
   try {
-    const latestData = await Temperature
-      .findOne({})
-      .sort({ timestamp: -1 });
+    const latestData = await Temperature.findFirst({
+      orderBy: { timestamp: 'desc' }
+    });
       
     if (!latestData) {
       return res.status(404).json({ message: 'No temperature data found' });

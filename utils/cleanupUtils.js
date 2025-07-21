@@ -6,38 +6,40 @@
 exports.cleanupCollection = async (model, maxRecords, deleteCount) => {
   try {
     // Count documents in the collection
-    const count = await model.countDocuments();
+    const count = await model.count();
     
     // Check if cleanup is needed
     if (count > maxRecords) {
-      console.log(`Collection ${model.collection.name} has ${count} records, exceeding limit of ${maxRecords}. Cleaning up...`);
+      console.log(`Collection ${model.modelName} has ${count} records, exceeding limit of ${maxRecords}. Cleaning up...`);
       
       // Calculate how many records to delete - ensure we don't leave less than maxRecords
       // For large collections, delete more records to bring it down to maxRecords
       const actualDeleteCount = Math.max(deleteCount, count - maxRecords);
       
-      console.log(`Will delete ${actualDeleteCount} records from ${model.collection.name}`);
+      console.log(`Will delete ${actualDeleteCount} records from ${model.modelName}`);
       
       // Find the oldest records to delete
-      const oldestRecords = await model
-        .find({})
-        .sort({ timestamp: 1 }) // Sort by timestamp ascending (oldest first)
-        .limit(actualDeleteCount);
+      const oldestRecords = await model.findMany({
+        orderBy: { timestamp: 'asc' }, // Sort by timestamp ascending (oldest first)
+        take: actualDeleteCount
+      });
       
       // Get IDs of records to delete
-      const idsToDelete = oldestRecords.map(record => record._id);
+      const idsToDelete = oldestRecords.map(record => record.id);
       
       // Delete the records
-      const deleteResult = await model.deleteMany({ _id: { $in: idsToDelete } });
+      const deleteResult = await model.deleteMany({
+        where: { id: { in: idsToDelete } }
+      });
       
-      console.log(`Deleted ${deleteResult.deletedCount} old records from ${model.collection.name}`);
-      return deleteResult.deletedCount;
+      console.log(`Deleted ${deleteResult.count} old records from ${model.modelName}`);
+      return deleteResult.count;
     } else {
       // No cleanup needed
       return 0;
     }
   } catch (error) {
-    console.error(`Error cleaning up collection ${model.collection.name}:`, error);
+    console.error(`Error cleaning up collection ${model.modelName}:`, error);
     return 0;
   }
 }; 
