@@ -1,10 +1,14 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 console.log('Setting up SQL Server database with Prisma...');
 
 try {
+  // Generate a random JWT secret
+  const jwtSecret = crypto.randomBytes(32).toString('hex');
+  
   // Check if .env file exists
   if (!fs.existsSync('.env')) {
     console.log('Creating .env file...');
@@ -14,6 +18,9 @@ DATABASE_URL="sqlserver://localhost:1433;database=iot-sensor-data;user=sa;passwo
 
 # Server configuration
 PORT=3000
+
+# JWT Secret for authentication
+JWT_SECRET="${jwtSecret}"
 `);
     console.log('.env file created. Please update the DATABASE_URL with your SQL Server credentials.');
     console.log('\nExample formats for DATABASE_URL:');
@@ -22,6 +29,14 @@ PORT=3000
     console.log('3. Azure SQL: DATABASE_URL="sqlserver://yourserver.database.windows.net:1433;database=iot-sensor-data;user=username;password=password;encrypt=true;trustServerCertificate=false"');
   } else {
     console.log('.env file already exists. Make sure it contains the DATABASE_URL for SQL Server.');
+    
+    // Check if JWT_SECRET exists in the .env file
+    const envContent = fs.readFileSync('.env', 'utf8');
+    if (!envContent.includes('JWT_SECRET=')) {
+      console.log('Adding JWT_SECRET to .env file...');
+      fs.appendFileSync('.env', `\n# JWT Secret for authentication\nJWT_SECRET="${jwtSecret}"\n`);
+      console.log('JWT_SECRET added to .env file.');
+    }
   }
 
   // Make sure the prisma directory exists

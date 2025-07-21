@@ -18,9 +18,10 @@ const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = r
 const temperatureRoutes = require('./routes/temperatureHumidityRoutes');
 const soilMoistureRoutes = require('./routes/soilMoistureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -71,6 +72,7 @@ async function startServer() {
     app.use('/api/temperature', temperatureRoutes);
     app.use('/api/soil-moisture', soilMoistureRoutes);
     app.use('/api/admin', adminRoutes);
+    app.use('/api/auth', authRoutes);
 
     // Start server
     app.listen(PORT, () => {

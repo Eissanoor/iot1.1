@@ -9,15 +9,18 @@
     "setup": "node setup-db.js",
     "test-db": "node test-db-connection.js",
     "seed-db": "node seed-db.js",
+    "seed-users": "node seed-users.js",
     "check-db-url": "node check-db-url.js",
     "migrate-data": "node migrate-data.js"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
+    "bcrypt": "^5.1.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.0.0",
     "node-cron": "^4.2.0",
     "prisma": "^6.12.0"

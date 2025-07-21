@@ -5,6 +5,7 @@ A Node.js server for collecting, storing, and retrieving IoT sensor data for tem
 ## Features
 
 - REST API for temperature, humidity, and soil moisture data
+- User authentication with JWT
 - Automatic data generation for testing/development
 - Automatic cleanup of old data
 - SQL Server database with Prisma ORM
@@ -82,8 +83,34 @@ The server will run on http://localhost:3000 by default.
 - `npm run check-db-url` - Check if your DATABASE_URL is valid
 - `npm run test-db` - Test the database connection
 - `npm run seed-db` - Seed the database with test data
+- `npm run migrate-data` - Migrate data from MongoDB to SQL Server
 
 ## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/signup` - Create a new user account
+  ```json
+  {
+    "email": "user@example.com",
+    "username": "username",
+    "password": "password123"
+  }
+  ```
+
+- `POST /api/auth/login` - Login with email and password
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+  ```
+
+- `GET /api/auth/me` - Get current user info (requires authentication)
+  ```
+  Headers:
+  Authorization: Bearer YOUR_JWT_TOKEN
+  ```
 
 ### Temperature and Humidity
 
