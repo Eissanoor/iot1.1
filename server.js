@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const cron = require('node-cron');
+require('dotenv').config();
 
 // Import controllers for cron jobs
 const tempHumidityController = require('./controllers/temperatureHumidityController');
@@ -25,7 +26,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // MongoDB Connection
-mongoose.connect('mongodb://127.0.0.1:27017/sensor-data', {
+mongoose.connect(process.env.MONGODB_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
