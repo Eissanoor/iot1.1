@@ -21,7 +21,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 2507;
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
