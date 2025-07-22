@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Authentication middleware
-const authenticate = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
@@ -36,4 +36,6 @@ const authenticate = (req, res, next) => {
   }
 };
 
-module.exports = authenticate; 
+module.exports = {
+  verifyToken
+}; 
