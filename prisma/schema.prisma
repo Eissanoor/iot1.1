@@ -64,7 +64,7 @@ model Asset {
   category       Category     @relation(fields: [categoryId], references: [id])
   
   subCategoryId  Int
-  subCategory    SubCategory  @relation(fields: [subCategoryId], references: [id])
+  subCategory    SubCategory  @relation(fields: [subCategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   
   locationId     Int
   location       Location     @relation(fields: [locationId], references: [id])
