@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const authenticate = require('../middleware/auth');
+const authMiddleware = require('../middleware/auth');
 
-// Public routes
+// Auth routes
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+router.get('/me', authMiddleware.verifyToken, authController.getMe);
 
-// Protected routes
-router.get('/me', authenticate, authController.getMe);
+// NFC settings route
+router.put('/nfc-settings', authMiddleware.verifyToken, authController.updateNfcSettings);
 
 module.exports = router; 

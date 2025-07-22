@@ -1,41 +1,68 @@
+const bcrypt = require('bcryptjs');
 const prisma = require('../prisma/client');
-const bcrypt = require('bcrypt');
 
-// Export Prisma User model operations
-module.exports = {
-  create: async (data) => {
-    // Hash the password before storing
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    
-    return prisma.user.create({
-      data: {
-        email: data.email,
-        username: data.username,
-        password: hashedPassword
-      }
-    });
-  },
-  
-  findByEmail: (email) => {
-    return prisma.user.findUnique({
+// User model methods
+class User {
+  // Find user by email
+  static async findByEmail(email) {
+    return await prisma.user.findUnique({
       where: { email }
     });
-  },
+  }
   
-  findByUsername: (username) => {
-    return prisma.user.findUnique({
+  // Find user by username
+  static async findByUsername(username) {
+    return await prisma.user.findUnique({
       where: { username }
     });
-  },
+  }
   
-  findById: (id) => {
-    return prisma.user.findUnique({
-      where: { id }
+  // Find user by NFC number
+  static async findByNfcNumber(nfcNumber) {
+    return await prisma.user.findFirst({
+      where: { 
+        nfcNumber,
+        isNfcEnable: true
+      }
     });
-  },
+  }
+  
+  // Find user by ID
+  static async findById(id) {
+    return await prisma.user.findUnique({
+      where: { id: parseInt(id) }
+    });
+  }
+  
+  // Create new user
+  static async create({ email, username, password, isNfcEnable = false, nfcNumber = null }) {
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user
+    return await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword,
+        isNfcEnable,
+        nfcNumber
+      }
+    });
+  }
+  
+  // Update user by ID
+  static async updateById(id, data) {
+    return await prisma.user.update({
+      where: { id: parseInt(id) },
+      data
+    });
+  }
   
   // Verify password
-  verifyPassword: async (plainPassword, hashedPassword) => {
+  static async verifyPassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
   }
-}; 
+}
+
+module.exports = User; 
