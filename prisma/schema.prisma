@@ -54,3 +54,26 @@ model Asset {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Category model
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  description  String?
+  subCategories SubCategory[] // One-to-many relationship with SubCategory
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// SubCategory model
+model SubCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    
+  description String?
+  categoryId  Int       // Foreign key to Category
+  category    Category  @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name, categoryId]) // Ensure subcategory names are unique within a category
+}
