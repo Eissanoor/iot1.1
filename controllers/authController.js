@@ -32,8 +32,9 @@ exports.signup = async (req, res) => {
       });
     }
     
-    // Check if NFC number is already in use (if provided)
-    if (nfcNumber) {
+    // Check if NFC number is already in use (if provided and NFC is enabled)
+    // If isNfcEnable is false, we won't check for NFC number uniqueness
+    if (nfcNumber && (isNfcEnable === true || isNfcEnable === undefined)) {
       const existingNfc = await User.findByNfcNumber(nfcNumber);
       if (existingNfc) {
         return res.status(400).json({ 
@@ -42,13 +43,13 @@ exports.signup = async (req, res) => {
       }
     }
     
-    // Create new user
+    // Create new user - if isNfcEnable is false, set nfcNumber to null regardless of input
     const user = await User.create({
       email,
       username,
       password,
       isNfcEnable: isNfcEnable || false,
-      nfcNumber: nfcNumber || null
+      nfcNumber: isNfcEnable === false ? null : (nfcNumber || null)
     });
     
     // Create JWT token
@@ -214,8 +215,12 @@ exports.updateNfcSettings = async (req, res) => {
       });
     }
     
-    // Check if NFC number is already in use (if provided and changed)
-    if (nfcNumber && nfcNumber !== user.nfcNumber) {
+    // If NFC is being disabled, automatically set nfcNumber to null
+    let updatedNfcNumber = nfcNumber;
+    if (isNfcEnable === false) {
+      updatedNfcNumber = null;
+    } else if (nfcNumber && nfcNumber !== user.nfcNumber) {
+      // Only check for existing NFC if NFC is enabled and number is changing
       const existingNfc = await User.findByNfcNumber(nfcNumber);
       if (existingNfc) {
         return res.status(400).json({ 
@@ -227,7 +232,7 @@ exports.updateNfcSettings = async (req, res) => {
     // Update user NFC settings
     const updatedUser = await User.updateById(userId, {
       isNfcEnable: isNfcEnable !== undefined ? isNfcEnable : user.isNfcEnable,
-      nfcNumber: nfcNumber !== undefined ? nfcNumber : user.nfcNumber
+      nfcNumber: isNfcEnable === false ? null : (updatedNfcNumber !== undefined ? updatedNfcNumber : user.nfcNumber)
     });
     
     res.status(200).json({
