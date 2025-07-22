@@ -76,71 +76,76 @@ exports.signup = async (req, res) => {
   }
 };
 
-// Login controller
+// Login controller (traditional login with email/password)
 exports.login = async (req, res) => {
   try {
-    const { email, password, nfcNumber } = req.body;
+    const { email, password } = req.body;
     
-    // Check login method
-    if (nfcNumber) {
-      // NFC login
-      return await loginWithNfc(nfcNumber, res);
-    } else if (email && password) {
-      // Traditional login
-      return await loginWithCredentials(email, password, res);
-    } else {
+    // Validate input
+    if (!email || !password) {
       return res.status(400).json({ 
-        error: 'Either email and password, or NFC number are required' 
+        error: 'Email and password are required' 
       });
     }
+    
+    // Find user by email
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Invalid credentials' 
+      });
+    }
+    
+    // Verify password
+    const isPasswordValid = await User.verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        error: 'Invalid credentials' 
+      });
+    }
+    
+    // Generate token and send response
+    generateTokenAndResponse(user, res);
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// Helper function for traditional login
-async function loginWithCredentials(email, password, res) {
-  // Find user by email
-  const user = await User.findByEmail(email);
-  if (!user) {
-    return res.status(401).json({ 
-      error: 'Invalid credentials' 
-    });
+// NFC login controller - separate endpoint specifically for NFC login
+exports.loginWithNfc = async (req, res) => {
+  try {
+    const { nfcNumber } = req.body;
+    
+    // Validate input
+    if (!nfcNumber) {
+      return res.status(400).json({ 
+        error: 'NFC number is required' 
+      });
+    }
+    
+    // Find user by NFC number
+    const user = await User.findByNfcNumber(nfcNumber);
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Invalid NFC card' 
+      });
+    }
+    
+    // Check if NFC login is enabled for this user
+    if (!user.isNfcEnable) {
+      return res.status(401).json({ 
+        error: 'NFC login is not enabled for this user' 
+      });
+    }
+    
+    // Generate token and send response
+    generateTokenAndResponse(user, res);
+  } catch (error) {
+    console.error('Error during NFC login:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  
-  // Verify password
-  const isPasswordValid = await User.verifyPassword(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(401).json({ 
-      error: 'Invalid credentials' 
-    });
-  }
-  
-  // Create and return token
-  return generateTokenAndResponse(user, res);
-}
-
-// Helper function for NFC login
-async function loginWithNfc(nfcNumber, res) {
-  // Find user by NFC number
-  const user = await User.findByNfcNumber(nfcNumber);
-  if (!user) {
-    return res.status(401).json({ 
-      error: 'Invalid NFC card' 
-    });
-  }
-  
-  // Check if NFC login is enabled for this user
-  if (!user.isNfcEnable) {
-    return res.status(401).json({ 
-      error: 'NFC login is not enabled for this user' 
-    });
-  }
-  
-  // Create and return token
-  return generateTokenAndResponse(user, res);
-}
+};
 
 // Helper function to generate token and response
 function generateTokenAndResponse(user, res) {
