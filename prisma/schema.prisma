@@ -77,3 +77,16 @@ model SubCategory {
 
   @@unique([name, categoryId]) // Ensure subcategory names are unique within a category
 }
+
+// Location model
+model Location {
+  id           Int       @id @default(autoincrement())
+  company      String
+  building     String
+  level_floor  String
+  office       String
+  room         String
+  locationCode String    @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

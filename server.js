@@ -24,6 +24,7 @@ const fuelLevelRoutes = require('./routes/fuelLevelRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const subCategoryRoutes = require('./routes/subCategoryRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -118,6 +119,7 @@ async function startServer() {
     app.use('/api/assets', assetRoutes);
     app.use('/api/categories', categoryRoutes);
     app.use('/api/subcategories', subCategoryRoutes);
+    app.use('/api/locations', locationRoutes);
 
     // Start server
     app.listen(PORT, () => {
