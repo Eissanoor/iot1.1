@@ -47,12 +47,31 @@ model FuelLevel {
 
 // Asset model
 model Asset {
-  id          Int      @id @default(autoincrement())
-  name        String
-  model       String
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             Int          @id @default(autoincrement())
+  name           String
+  tagNumber      String       @unique
+  model          String
+  brand          String
+  serialNumber   String?
+  assetCondition String       // e.g., "Good", "Fair", "Poor"
+  assetStatus    String       // e.g., "In Use", "In Storage", "Under Maintenance"
+  description    String
+  assetDescription String?
+  image          String?      // Path to the image file
+  
+  // Relations
+  categoryId     Int
+  category       Category     @relation(fields: [categoryId], references: [id])
+  
+  subCategoryId  Int
+  subCategory    SubCategory  @relation(fields: [subCategoryId], references: [id])
+  
+  locationId     Int
+  location       Location     @relation(fields: [locationId], references: [id])
+  locationCode   String
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 // Category model
@@ -61,6 +80,7 @@ model Category {
   name         String        @unique
   description  String?
   subCategories SubCategory[] // One-to-many relationship with SubCategory
+  assets       Asset[]       // One-to-many relationship with Asset
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -72,6 +92,7 @@ model SubCategory {
   description String?
   categoryId  Int       // Foreign key to Category
   category    Category  @relation(fields: [categoryId], references: [id])
+  assets      Asset[]   // One-to-many relationship with Asset
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -87,6 +108,7 @@ model Location {
   office       String
   room         String
   locationCode String    @unique
+  assets       Asset[]   // One-to-many relationship with Asset
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }

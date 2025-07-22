@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const cron = require('node-cron');
+const path = require('path');
 require('dotenv').config();
 
 // Import Prisma client
@@ -33,6 +34,9 @@ const PORT = process.env.PORT || 2507;
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Fuel level simulation variables
 let currentFuelLevel = 100; // Starting at 100%
