@@ -45,6 +45,20 @@ model FuelLevel {
   timestamp DateTime @default(now())
 }
 
+// Vibration Sensor data model
+model VibrationSensor {
+  id             Int      @id @default(autoincrement())
+  amplitude      Float    // Vibration amplitude (in mm/s or g)
+  frequency      Float    // Vibration frequency (in Hz)
+  axisX          Float    // X-axis vibration value
+  axisY          Float    // Y-axis vibration value
+  axisZ          Float    // Z-axis vibration value
+  rms            Float    // Root Mean Square value of vibration
+  peakValue      Float    // Peak vibration value
+  deviceId       String   // Identifier for the vibration sensor device
+  timestamp      DateTime @default(now())
+}
+
 // Asset model
 model Asset {
   id             Int          @id @default(autoincrement())

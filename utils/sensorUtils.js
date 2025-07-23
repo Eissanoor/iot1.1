@@ -59,4 +59,82 @@ exports.formatRemainingTime = (timeInHours) => {
   } else {
     return `${minutes}m`;
   }
+};
+
+// Vibration sensor utility functions
+
+// Generate vibration data with realistic patterns
+exports.generateVibrationData = (baseAmplitude, baseFrequency, loadFactor = 1.0) => {
+  // Apply load factor to base values
+  const adjustedAmplitude = baseAmplitude * loadFactor;
+  const adjustedFrequency = baseFrequency * (0.9 + loadFactor * 0.2); // Frequency increases slightly with load
+  
+  // Add random variations
+  const amplitude = this.generateFluctuation(adjustedAmplitude, adjustedAmplitude * 0.2);
+  const frequency = this.generateFluctuation(adjustedFrequency, adjustedFrequency * 0.1);
+  
+  // Generate axis values with some correlation but also independence
+  const axisX = amplitude * this.getRandomValue(0.6, 1.4);
+  const axisY = amplitude * this.getRandomValue(0.6, 1.4);
+  const axisZ = amplitude * this.getRandomValue(0.6, 1.4);
+  
+  // Calculate RMS value
+  const rms = Math.sqrt((axisX * axisX + axisY * axisY + axisZ * axisZ) / 3);
+  
+  // Calculate peak value
+  const peakValue = Math.max(axisX, axisY, axisZ);
+  
+  return {
+    amplitude: this.formatValue(amplitude, 3),
+    frequency: this.formatValue(frequency, 2),
+    axisX: this.formatValue(axisX, 3),
+    axisY: this.formatValue(axisY, 3),
+    axisZ: this.formatValue(axisZ, 3),
+    rms: this.formatValue(rms, 3),
+    peakValue: this.formatValue(peakValue, 3)
+  };
+};
+
+// Analyze vibration data for potential issues
+exports.analyzeVibrationData = (data) => {
+  const result = {
+    status: 'normal',
+    warnings: [],
+    severity: 0
+  };
+  
+  // Check amplitude thresholds
+  if (data.amplitude > 0.8) {
+    result.warnings.push('High vibration amplitude detected');
+    result.severity += 1;
+  }
+  
+  if (data.amplitude > 1.2) {
+    result.warnings.push('Critical vibration amplitude');
+    result.severity += 2;
+  }
+  
+  // Check for axis imbalance
+  const maxAxis = Math.max(data.axisX, data.axisY, data.axisZ);
+  const minAxis = Math.min(data.axisX, data.axisY, data.axisZ);
+  
+  if (maxAxis / minAxis > 2.5) {
+    result.warnings.push('Significant axis imbalance detected');
+    result.severity += 1;
+  }
+  
+  // Check for abnormal frequency
+  if (data.frequency < 20 || data.frequency > 100) {
+    result.warnings.push('Abnormal vibration frequency');
+    result.severity += 1;
+  }
+  
+  // Set overall status based on severity
+  if (result.severity >= 3) {
+    result.status = 'critical';
+  } else if (result.severity > 0) {
+    result.status = 'warning';
+  }
+  
+  return result;
 }; 

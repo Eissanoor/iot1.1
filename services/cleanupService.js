@@ -36,6 +36,16 @@ const cleanupConfig = {
     },
     maxRecords: 100,  // Keep more fuel level records for trend analysis
     deleteCount: 40
+  },
+  vibrationSensor: {
+    model: {
+      count: () => prisma.vibrationSensor.count(),
+      findMany: (options) => prisma.vibrationSensor.findMany(options),
+      deleteMany: (where) => prisma.vibrationSensor.deleteMany(where),
+      modelName: 'VibrationSensor'
+    },
+    maxRecords: 120,  // Keep more vibration records for trend analysis
+    deleteCount: 50
   }
   // Add more collections here as needed
 };

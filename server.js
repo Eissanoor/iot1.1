@@ -12,6 +12,7 @@ const prisma = require('./prisma/client');
 const tempHumidityController = require('./controllers/temperatureHumidityController');
 const soilMoistureController = require('./controllers/soilMoistureController');
 const fuelLevelController = require('./controllers/fuelLevelController');
+const vibrationSensorController = require('./controllers/vibrationSensorController');
 
 // Import cleanup service
 const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = require('./services/cleanupService');
@@ -26,6 +27,7 @@ const assetRoutes = require('./routes/assetRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const subCategoryRoutes = require('./routes/subCategoryRoutes');
 const locationRoutes = require('./routes/locationRoutes');
+const vibrationSensorRoutes = require('./routes/vibrationSensorRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -84,6 +86,7 @@ async function startServer() {
     // Set up scenario change intervals
     setInterval(tempHumidityController.changeScenario, (Math.random() * 3 + 2) * 60 * 1000); // Change temp/humidity scenario every 2-5 minutes
     setInterval(soilMoistureController.changeScenario, (Math.random() * 5 + 5) * 60 * 1000); // Change soil moisture scenario every 5-10 minutes
+    setInterval(vibrationSensorController.changeScenario, (Math.random() * 4 + 3) * 60 * 1000); // Change vibration scenario every 3-7 minutes
 
     // Schedule cron jobs to run
     cron.schedule('*/3 * * * * *', () => {
@@ -97,6 +100,11 @@ async function startServer() {
     // Schedule fuel level simulation every 10 seconds
     cron.schedule('*/10 * * * * *', () => {
       simulateFuelDecrease();
+    });
+
+    // Schedule vibration sensor simulation every 7 seconds
+    cron.schedule('*/7 * * * * *', () => {
+      vibrationSensorController.saveVibrationData();
     });
 
     // Schedule regular cleanup cron job to run every minute
@@ -124,6 +132,7 @@ async function startServer() {
     app.use('/api/categories', categoryRoutes);
     app.use('/api/subcategories', subCategoryRoutes);
     app.use('/api/locations', locationRoutes);
+    app.use('/api/vibration-sensor', vibrationSensorRoutes);
 
     // Start server
     app.listen(PORT, () => {
