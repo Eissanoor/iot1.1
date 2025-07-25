@@ -28,6 +28,8 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const subCategoryRoutes = require('./routes/subCategoryRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const vibrationSensorRoutes = require('./routes/vibrationSensorRoutes');
+const megaMenuRoutes = require('./routes/megaMenuRoutes');
+const subMegaMenuRoutes = require('./routes/subMegaMenuRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -133,6 +135,8 @@ async function startServer() {
     app.use('/api/subcategories', subCategoryRoutes);
     app.use('/api/locations', locationRoutes);
     app.use('/api/vibration-sensor', vibrationSensorRoutes);
+    app.use('/api/megamenu', megaMenuRoutes);
+    app.use('/api/submegamenu', subMegaMenuRoutes);
 
     // Start server
     app.listen(PORT, () => {

@@ -126,3 +126,30 @@ model Location {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+// MegaMenu model
+model MegaMenu {
+  id          Int           @id @default(autoincrement())
+  name_en     String
+  name_ar     String
+  status      Boolean       @default(true)
+  subMenus    SubMegaMenu[] // One-to-many relationship with SubMegaMenu
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// SubMegaMenu model
+model SubMegaMenu {
+  id          Int       @id @default(autoincrement())
+  name_en     String
+  name_ar     String
+  image       String?   // Path to the image file
+  caption     String?
+  caption_ar  String?
+  status      Boolean   @default(true)
+  url         String
+  megamenu_id Int       // Foreign key to MegaMenu
+  megaMenu    MegaMenu  @relation(fields: [megamenu_id], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
