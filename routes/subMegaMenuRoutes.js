@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const subMegaMenuController = require('../controllers/subMegaMenuController');
-const auth = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 
 // @route   POST /api/submegamenu
 // @desc    Create a new sub mega menu
 // @access  Private
-router.post('/', auth, subMegaMenuController.createSubMegaMenu);
+router.post('/', verifyToken, subMegaMenuController.createSubMegaMenu);
 
 // @route   GET /api/submegamenu
 // @desc    Get all sub mega menus
@@ -26,11 +26,11 @@ router.get('/:id', subMegaMenuController.getSubMegaMenu);
 // @route   PUT /api/submegamenu/:id
 // @desc    Update a sub mega menu
 // @access  Private
-router.put('/:id', auth, subMegaMenuController.updateSubMegaMenu);
+router.put('/:id', verifyToken, subMegaMenuController.updateSubMegaMenu);
 
 // @route   DELETE /api/submegamenu/:id
 // @desc    Delete a sub mega menu
 // @access  Private
-router.delete('/:id', auth, subMegaMenuController.deleteSubMegaMenu);
+router.delete('/:id', verifyToken, subMegaMenuController.deleteSubMegaMenu);
 
 module.exports = router; 
