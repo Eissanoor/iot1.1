@@ -105,8 +105,9 @@ exports.createAsset = async (req, res) => {
 exports.getAllAssets = async (req, res) => {
   try {
     // Get query parameters for filtering and pagination
-    const limit = parseInt(req.query.limit) || 100; // Default to 100 records
-    const skip = parseInt(req.query.skip) || 0;
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 records per page
+    const skip = (page - 1) * limit;
     const categoryId = req.query.categoryId ? parseInt(req.query.categoryId) : undefined;
     const subCategoryId = req.query.subCategoryId ? parseInt(req.query.subCategoryId) : undefined;
     const locationId = req.query.locationId ? parseInt(req.query.locationId) : undefined;
@@ -135,10 +136,18 @@ exports.getAllAssets = async (req, res) => {
     });
     
     // Get total count
-    const count = await prisma.asset.count({ where });
+    const totalItems = await prisma.asset.count({ where });
+    const totalPages = Math.ceil(totalItems / limit);
     
     res.status(200).json({
-      count,
+      pagination: {
+        totalItems,
+        itemsPerPage: limit,
+        currentPage: page,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
       assets
     });
   } catch (error) {
