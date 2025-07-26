@@ -31,6 +31,7 @@ const vibrationSensorRoutes = require('./routes/vibrationSensorRoutes');
 const megaMenuRoutes = require('./routes/megaMenuRoutes');
 const subMegaMenuRoutes = require('./routes/subMegaMenuRoutes');
 const brandRoutes = require('./routes/brandRoutes');
+const assetConditionRoutes = require('./routes/assetConditionRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -139,6 +140,7 @@ async function startServer() {
     app.use('/api/megamenu', megaMenuRoutes);
     app.use('/api/submegamenu', subMegaMenuRoutes);
     app.use('/api/brands', brandRoutes);
+    app.use('/api/asset-conditions', assetConditionRoutes);
 
     // Start server
     app.listen(PORT, () => {
