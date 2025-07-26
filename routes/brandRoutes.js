@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const brandController = require('../controllers/brandController');
-const auth = require('../middleware/auth');
+const authMiddleware = require('../middleware/auth');
 
 // Create a new brand - Protected route
-router.post('/', auth, brandController.createBrand);
+router.post('/', authMiddleware.verifyToken, brandController.createBrand);
 
 // Get all brands
 router.get('/', brandController.getAllBrands);
@@ -13,9 +13,9 @@ router.get('/', brandController.getAllBrands);
 router.get('/:id', brandController.getBrandById);
 
 // Update a brand - Protected route
-router.put('/:id', auth, brandController.updateBrand);
+router.put('/:id', authMiddleware.verifyToken, brandController.updateBrand);
 
 // Delete a brand - Protected route
-router.delete('/:id', auth, brandController.deleteBrand);
+router.delete('/:id', authMiddleware.verifyToken, brandController.deleteBrand);
 
 module.exports = router; 
