@@ -8,12 +8,29 @@ class AssetCondition {
     });
   }
 
-  static async findAll() {
-    return prisma.assetCondition.findMany({
-      orderBy: {
-        createdAt: 'desc'
+  static async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    
+    const [assetConditions, totalCount] = await Promise.all([
+      prisma.assetCondition.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.assetCondition.count()
+    ]);
+    
+    return {
+      assetConditions,
+      pagination: {
+        total: totalCount,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalCount / limit)
       }
-    });
+    };
   }
 
   static async findById(id) {

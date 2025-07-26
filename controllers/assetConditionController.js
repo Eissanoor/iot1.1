@@ -40,15 +40,28 @@ exports.createAssetCondition = async (req, res) => {
   }
 };
 
-// Get all asset conditions
+// Get all asset conditions with pagination
 exports.getAllAssetConditions = async (req, res) => {
   try {
-    const assetConditions = await AssetCondition.findAll();
+    // Extract pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid pagination parameters. Page must be >= 1 and limit must be between 1 and 100.'
+      });
+    }
+    
+    const result = await AssetCondition.findAll(page, limit);
     
     res.status(200).json({
       success: true,
-      count: assetConditions.length,
-      data: assetConditions
+      count: result.assetConditions.length,
+      pagination: result.pagination,
+      data: result.assetConditions
     });
   } catch (error) {
     console.error('Error fetching asset conditions:', error);
