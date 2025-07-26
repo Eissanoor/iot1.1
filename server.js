@@ -142,6 +142,9 @@ async function startServer() {
     app.use('/api/brands', brandRoutes);
     app.use('/api/asset-conditions', assetConditionRoutes);
 
+    app.get('/', (req, res) => {
+      res.json('FATSAIBACKEND');
+    });
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
