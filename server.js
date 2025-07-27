@@ -32,6 +32,7 @@ const megaMenuRoutes = require('./routes/megaMenuRoutes');
 const subMegaMenuRoutes = require('./routes/subMegaMenuRoutes');
 const brandRoutes = require('./routes/brandRoutes');
 const assetConditionRoutes = require('./routes/assetConditionRoutes');
+const employeeListRoutes = require('./routes/employeeListRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -141,6 +142,7 @@ async function startServer() {
     app.use('/api/submegamenu', subMegaMenuRoutes);
     app.use('/api/brands', brandRoutes);
     app.use('/api/asset-conditions', assetConditionRoutes);
+    app.use('/api/employees', employeeListRoutes);
 
     app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
