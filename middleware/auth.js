@@ -36,6 +36,45 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// Admin authentication middleware
+const verifyAdminToken = (req, res, next) => {
+  try {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Extract token from header
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Check if token is for admin
+    if (!decoded.adminId || decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Add admin info to request
+    req.admin = decoded;
+    
+    // Continue to next middleware/route handler
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid token' });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    } else {
+      console.error('Authentication error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+};
+
 module.exports = {
-  verifyToken
+  verifyToken,
+  verifyAdminToken
 }; 

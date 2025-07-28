@@ -22,6 +22,7 @@ const temperatureRoutes = require('./routes/temperatureHumidityRoutes');
 const soilMoistureRoutes = require('./routes/soilMoistureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
+const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const fuelLevelRoutes = require('./routes/fuelLevelRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -132,6 +133,7 @@ async function startServer() {
     app.use('/api/soil-moisture', soilMoistureRoutes);
     app.use('/api/admin', adminRoutes);
     app.use('/api/auth', authRoutes);
+    app.use('/api/admin-auth', adminAuthRoutes);
     app.use('/api/fuel-level', fuelLevelRoutes);
     app.use('/api/assets', assetRoutes);
     app.use('/api/categories', categoryRoutes);

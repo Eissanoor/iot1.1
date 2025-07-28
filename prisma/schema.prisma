@@ -37,6 +37,16 @@ model User {
   updatedAt   DateTime @updatedAt
 }
 
+// Admin model for admin authentication
+model Admin {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // Fuel Level data model
 model FuelLevel {
   id        Int      @id @default(autoincrement())
