@@ -20,7 +20,11 @@ exports.createAsset = async (req, res) => {
       categoryId, 
       subCategoryId, 
       locationId, 
-      locationCode 
+      locationCode,
+      price,
+      modifiers,
+      manufactureDate,
+      expiryDate
     } = req.body;
     
     // Validate required fields
@@ -66,6 +70,10 @@ exports.createAsset = async (req, res) => {
       imagePath = getImageUrl(req.file.filename);
     }
     
+    // Parse dates if provided
+    const parsedManufactureDate = manufactureDate ? new Date(manufactureDate) : null;
+    const parsedExpiryDate = expiryDate ? new Date(expiryDate) : null;
+    
     // Create new asset
     const asset = await prisma.asset.create({
       data: {
@@ -79,6 +87,10 @@ exports.createAsset = async (req, res) => {
         description: description || '',
         assetDescription: assetDescription || null,
         image: imagePath,
+        price: price ? parseFloat(price) : null,
+        modifiers: modifiers || null,
+        manufactureDate: parsedManufactureDate,
+        expiryDate: parsedExpiryDate,
         categoryId: parseInt(categoryId),
         subCategoryId: parseInt(subCategoryId),
         locationId: parseInt(locationId),
@@ -197,7 +209,11 @@ exports.updateAsset = async (req, res) => {
       categoryId, 
       subCategoryId, 
       locationId, 
-      locationCode 
+      locationCode,
+      price,
+      modifiers,
+      manufactureDate,
+      expiryDate
     } = req.body;
     
     // Check if asset exists
@@ -259,6 +275,10 @@ exports.updateAsset = async (req, res) => {
       }
     }
     
+    // Parse dates if provided
+    const parsedManufactureDate = manufactureDate ? new Date(manufactureDate) : undefined;
+    const parsedExpiryDate = expiryDate ? new Date(expiryDate) : undefined;
+    
     // Update asset
     const updatedAsset = await prisma.asset.update({
       where: { id: parseInt(id) },
@@ -273,6 +293,10 @@ exports.updateAsset = async (req, res) => {
         description: description !== undefined ? description : existingAsset.description,
         assetDescription: assetDescription !== undefined ? assetDescription : existingAsset.assetDescription,
         image: imagePath,
+        price: price !== undefined ? parseFloat(price) : existingAsset.price,
+        modifiers: modifiers !== undefined ? modifiers : existingAsset.modifiers,
+        manufactureDate: parsedManufactureDate !== undefined ? parsedManufactureDate : existingAsset.manufactureDate,
+        expiryDate: parsedExpiryDate !== undefined ? parsedExpiryDate : existingAsset.expiryDate,
         categoryId: categoryId !== undefined ? parseInt(categoryId) : existingAsset.categoryId,
         subCategoryId: subCategoryId !== undefined ? parseInt(subCategoryId) : existingAsset.subCategoryId,
         locationId: locationId !== undefined ? parseInt(locationId) : existingAsset.locationId,

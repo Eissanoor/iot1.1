@@ -91,6 +91,10 @@ model Asset {
   description    String
   assetDescription String?
   image          String?      // Path to the image file
+  price          Float?       // Price of the asset
+  modifiers      String?      // Additional modifiers or specifications
+  manufactureDate DateTime?   // Date of manufacture
+  expiryDate     DateTime?    // Expiry or warranty end date
   
   // Relations
   categoryId     Int
