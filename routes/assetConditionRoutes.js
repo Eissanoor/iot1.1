@@ -13,9 +13,9 @@ router.get('/', assetConditionController.getAllAssetConditions);
 router.get('/:id', assetConditionController.getAssetConditionById);
 
 // Update an asset condition - Protected route
-router.put('/:id', authMiddleware.verifyToken, assetConditionController.updateAssetCondition);
+router.put('/:id', authMiddleware.verifyAdminToken, assetConditionController.updateAssetCondition);
 
 // Delete an asset condition - Protected route
-router.delete('/:id', authMiddleware.verifyToken, assetConditionController.deleteAssetCondition);
+router.delete('/:id', authMiddleware.verifyAdminToken, assetConditionController.deleteAssetCondition);
 
 module.exports = router; 

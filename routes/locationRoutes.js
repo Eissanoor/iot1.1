@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
-const { verifyToken } = require('../middleware/auth');
+const { verifyAdminToken } = require('../middleware/auth');
 
 // Create a new location - protected route
-router.post('/', verifyToken, locationController.createLocation);
+router.post('/', verifyAdminToken, locationController.createLocation);
 
 // Get all locations
 router.get('/', locationController.getAllLocations);
@@ -13,9 +13,9 @@ router.get('/', locationController.getAllLocations);
 router.get('/:id', locationController.getLocationById);
 
 // Update location - protected route
-router.put('/:id', verifyToken, locationController.updateLocation);
+router.put('/:id', verifyAdminToken, locationController.updateLocation);
 
 // Delete location - protected route
-router.delete('/:id', verifyToken, locationController.deleteLocation);
+router.delete('/:id', verifyAdminToken, locationController.deleteLocation);
 
 module.exports = router; 

@@ -19,12 +19,12 @@ router.get('/:id', assetController.getAssetById);
 
 // Update asset with image upload (protected route)
 router.put('/:id', 
-  authMiddleware.verifyToken, 
+  authMiddleware.verifyAdminToken, 
   assetController.uploadAssetImage,
   assetController.updateAsset
 );
 
 // Delete asset (protected route)
-router.delete('/:id', authMiddleware.verifyToken, assetController.deleteAsset);
+router.delete('/:id', authMiddleware.verifyAdminToken, assetController.deleteAsset);
 
 module.exports = router; 
