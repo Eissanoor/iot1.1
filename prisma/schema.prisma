@@ -195,3 +195,12 @@ model AssetCondition {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+// Department model
+model Department {
+  id              Int       @id @default(autoincrement())
+  departmentCode  String    @unique
+  departmentName  String    
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
