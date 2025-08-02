@@ -95,7 +95,10 @@ model Asset {
   modifiers      String?      // Additional modifiers or specifications
   manufactureDate DateTime?   // Date of manufacture
   expiryDate     DateTime?    // Expiry or warranty end date
+  status         Int          @default(0)
+
   
+
   // Relations
   categoryId     Int
   category       Category     @relation(fields: [categoryId], references: [id])

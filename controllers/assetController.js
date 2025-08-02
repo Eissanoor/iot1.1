@@ -24,7 +24,8 @@ exports.createAsset = async (req, res) => {
       price,
       modifiers,
       manufactureDate,
-      expiryDate
+      expiryDate,
+      status
     } = req.body;
     
     // Validate required fields
@@ -91,6 +92,7 @@ exports.createAsset = async (req, res) => {
         modifiers: modifiers || null,
         manufactureDate: parsedManufactureDate,
         expiryDate: parsedExpiryDate,
+        status: status !== undefined ? parseInt(status) : 0,
         categoryId: parseInt(categoryId),
         subCategoryId: parseInt(subCategoryId),
         locationId: parseInt(locationId),
@@ -125,6 +127,7 @@ exports.getAllAssets = async (req, res) => {
     const locationId = req.query.locationId ? parseInt(req.query.locationId) : undefined;
     const status = req.query.status;
     const condition = req.query.condition;
+    const assetStatus = req.query.assetStatus ? parseInt(req.query.assetStatus) : undefined;
     
     // Build filter object
     const where = {};
@@ -133,6 +136,7 @@ exports.getAllAssets = async (req, res) => {
     if (locationId) where.locationId = locationId;
     if (status) where.assetStatus = status;
     if (condition) where.assetCondition = condition;
+    if (assetStatus !== undefined) where.status = assetStatus;
     
     // Get assets with pagination, sort by createdAt descending (newest first)
     const assets = await prisma.asset.findMany({
@@ -213,7 +217,8 @@ exports.updateAsset = async (req, res) => {
       price,
       modifiers,
       manufactureDate,
-      expiryDate
+      expiryDate,
+      status
     } = req.body;
     
     // Check if asset exists
@@ -297,6 +302,7 @@ exports.updateAsset = async (req, res) => {
         modifiers: modifiers !== undefined ? modifiers : existingAsset.modifiers,
         manufactureDate: parsedManufactureDate !== undefined ? parsedManufactureDate : existingAsset.manufactureDate,
         expiryDate: parsedExpiryDate !== undefined ? parsedExpiryDate : existingAsset.expiryDate,
+        status: status !== undefined ? parseInt(status) : existingAsset.status,
         categoryId: categoryId !== undefined ? parseInt(categoryId) : existingAsset.categoryId,
         subCategoryId: subCategoryId !== undefined ? parseInt(subCategoryId) : existingAsset.subCategoryId,
         locationId: locationId !== undefined ? parseInt(locationId) : existingAsset.locationId,
