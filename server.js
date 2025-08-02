@@ -13,6 +13,7 @@ const tempHumidityController = require('./controllers/temperatureHumidityControl
 const soilMoistureController = require('./controllers/soilMoistureController');
 const fuelLevelController = require('./controllers/fuelLevelController');
 const vibrationSensorController = require('./controllers/vibrationSensorController');
+const npkSensorController = require('./controllers/npkSensorController');
 
 // Import cleanup service
 const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = require('./services/cleanupService');
@@ -35,6 +36,7 @@ const brandRoutes = require('./routes/brandRoutes');
 const assetConditionRoutes = require('./routes/assetConditionRoutes');
 const employeeListRoutes = require('./routes/employeeListRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
+const npkSensorRoutes = require('./routes/npkSensorRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -94,6 +96,7 @@ async function startServer() {
     setInterval(tempHumidityController.changeScenario, (Math.random() * 3 + 2) * 60 * 1000); // Change temp/humidity scenario every 2-5 minutes
     setInterval(soilMoistureController.changeScenario, (Math.random() * 5 + 5) * 60 * 1000); // Change soil moisture scenario every 5-10 minutes
     setInterval(vibrationSensorController.changeScenario, (Math.random() * 4 + 3) * 60 * 1000); // Change vibration scenario every 3-7 minutes
+    setInterval(npkSensorController.changeScenario, (Math.random() * 6 + 4) * 60 * 1000); // Change NPK scenario every 4-10 minutes
 
     // Schedule cron jobs to run
     cron.schedule('*/3 * * * * *', () => {
@@ -112,6 +115,11 @@ async function startServer() {
     // Schedule vibration sensor simulation every 7 seconds
     cron.schedule('*/7 * * * * *', () => {
       vibrationSensorController.saveVibrationData();
+    });
+    
+    // Schedule NPK sensor simulation every 9 seconds
+    cron.schedule('*/9 * * * * *', () => {
+      npkSensorController.saveNPKData();
     });
 
     // Schedule regular cleanup cron job to run every minute
@@ -147,6 +155,7 @@ async function startServer() {
     app.use('/api/asset-conditions', assetConditionRoutes);
     app.use('/api/employees', employeeListRoutes);
     app.use('/api/departments', departmentRoutes);
+    app.use('/api/npk-sensor', npkSensorRoutes);
 
     app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');

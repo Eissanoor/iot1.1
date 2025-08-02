@@ -204,3 +204,14 @@ model Department {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
+
+// NPK Sensor data model
+model NPKSensor {
+  id          Int      @id @default(autoincrement())
+  nitrogen    Float    // Nitrogen level (in mg/kg or ppm)
+  phosphorus  Float    // Phosphorus level (in mg/kg or ppm)
+  potassium   Float    // Potassium level (in mg/kg or ppm)
+  ph          Float    // pH level of the soil (0-14 scale)
+  deviceId    String   // Identifier for the NPK sensor device
+  timestamp   DateTime @default(now())
+}

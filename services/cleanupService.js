@@ -46,6 +46,16 @@ const cleanupConfig = {
     },
     maxRecords: 120,  // Keep more vibration records for trend analysis
     deleteCount: 50
+  },
+  npkSensor: {
+    model: {
+      count: () => prisma.nPKSensor.count(),
+      findMany: (options) => prisma.nPKSensor.findMany(options),
+      deleteMany: (where) => prisma.nPKSensor.deleteMany(where),
+      modelName: 'NPKSensor'
+    },
+    maxRecords: 100,  // Keep a good number of NPK records for soil analysis
+    deleteCount: 40
   }
   // Add more collections here as needed
 };
