@@ -14,6 +14,9 @@ router.post('/',
 // Get all assets
 router.get('/', assetController.getAllAssets);
 
+// Get dashboard statistics
+router.get('/stats/dashboard', assetController.getDashboardStats);
+
 // Get asset by ID
 router.get('/:id', assetController.getAssetById);
 

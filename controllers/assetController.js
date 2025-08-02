@@ -350,3 +350,30 @@ exports.deleteAsset = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 }; 
+
+// Get dashboard statistics: user count, captured assets, verified assets
+exports.getDashboardStats = async (req, res) => {
+  try {
+    // Get total user count
+    const allUsers = await prisma.user.count();
+    
+    // Get total captured assets (status = 0)
+    const totalCaptureAsset = await prisma.asset.count({
+      where: { status: 0 }
+    });
+    
+    // Get total verified assets (status = 1)
+    const totalVerifiedAsset = await prisma.asset.count({
+      where: { status: 1 }
+    });
+    
+    res.status(200).json({
+      allUsers,
+      totalCaptureAsset,
+      totalVerifiedAsset
+    });
+  } catch (error) {
+    console.error('Error getting dashboard stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
