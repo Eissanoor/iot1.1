@@ -218,3 +218,37 @@ model NPKSensor {
   deviceId    String   // Identifier for the NPK sensor device
   timestamp   DateTime @default(now())
 }
+
+// DeviceCategory model
+model DeviceCategory {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  image       String?    // Path to the image file
+  button      String?    // Button text or action
+  iotDevices  IotDevice[] // One-to-many relationship with IotDevice
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// IotDevice model
+model IotDevice {
+  id              Int            @id @default(autoincrement())
+  name            String
+  tagNumber       String         @unique
+  model           String
+  serialNumber    String?
+  image           String?        // Path to the image file
+  price           Float?         // Price of the device
+  modifiers       String?        // Additional modifiers or specifications
+  manufactureDate DateTime?      // Date of manufacture
+  expiryDate      DateTime?      // Expiry or warranty end date
+  status          Int            @default(0)
+  
+  // Relations
+  deviceCategoryId Int
+  deviceCategory   DeviceCategory @relation(fields: [deviceCategoryId], references: [id])
+  
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}

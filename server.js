@@ -37,6 +37,8 @@ const assetConditionRoutes = require('./routes/assetConditionRoutes');
 const employeeListRoutes = require('./routes/employeeListRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const npkSensorRoutes = require('./routes/npkSensorRoutes');
+const deviceCategoryRoutes = require('./routes/deviceCategoryRoutes');
+const iotDeviceRoutes = require('./routes/iotDeviceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -156,6 +158,8 @@ async function startServer() {
     app.use('/api/employees', employeeListRoutes);
     app.use('/api/departments', departmentRoutes);
     app.use('/api/npk-sensor', npkSensorRoutes);
+    app.use('/api/device-categories', deviceCategoryRoutes);
+    app.use('/api/iot-devices', iotDeviceRoutes);
 
     app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
