@@ -164,6 +164,41 @@ exports.updateDeviceCategory = async (req, res) => {
   }
 };
 
+exports.getIotDevicesByCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if device category exists
+    const existingCategory = await prisma.deviceCategory.findUnique({
+      where: { id: parseInt(id) }
+    });
+    
+    if (!existingCategory) {
+      return res.status(404).json({ error: 'Device category not found' });
+    }
+    
+    // Get all IoT devices for this category
+    const iotDevices = await prisma.iotDevice.findMany({
+      where: { deviceCategoryId: parseInt(id) },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    res.status(200).json({
+      category: {
+        id: existingCategory.id,
+        name: existingCategory.name
+      },
+      devices: iotDevices,
+      count: iotDevices.length
+    });
+  } catch (error) {
+    console.error('Error fetching IoT devices by category:', error);
+    res.status(500).json({ error: 'Failed to fetch IoT devices for this category' });
+  }
+};
+
 exports.deleteDeviceCategory = async (req, res) => {
   try {
     const { id } = req.params;

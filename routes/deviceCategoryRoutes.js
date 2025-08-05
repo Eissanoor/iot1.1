@@ -17,6 +17,9 @@ router.get('/', deviceCategoryController.getAllDeviceCategories);
 // Get device category by ID
 router.get('/:id', deviceCategoryController.getDeviceCategoryById);
 
+// Get all IoT devices by category ID
+router.get('/:id/devices', deviceCategoryController.getIotDevicesByCategory);
+
 // Update device category with image upload (protected route)
 router.put('/:id', 
   authMiddleware.verifyAdminToken, 
