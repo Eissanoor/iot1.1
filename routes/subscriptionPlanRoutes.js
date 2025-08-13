@@ -47,4 +47,35 @@ router.put(
 // @access  Private/Admin
 router.delete('/:id', verifyAdminToken, subscriptionPlanController.deleteSubscriptionPlan);
 
+// @route   POST /api/subscription-plans/add-service
+// @desc    Add a service to a subscription plan
+// @access  Private/Admin
+router.post(
+  '/add-service',
+  [
+    verifyAdminToken,
+    check('planId', 'Plan ID is required').not().isEmpty(),
+    check('serviceId', 'Service ID is required').not().isEmpty(),
+    check('isIncluded', 'Is included must be a boolean').optional().isBoolean()
+  ],
+  subscriptionPlanController.addPlanService
+);
+
+// @route   DELETE /api/subscription-plans/:planId/services/:serviceId
+// @desc    Remove a service from a subscription plan
+// @access  Private/Admin
+router.delete(
+  '/:planId/services/:serviceId',
+  verifyAdminToken,
+  subscriptionPlanController.removePlanService
+);
+
+// @route   GET /api/subscription-plans/:planId/services
+// @desc    Get all services for a specific plan
+// @access  Public
+router.get(
+  '/:planId/services',
+  subscriptionPlanController.getPlanServices
+);
+
 module.exports = router;
