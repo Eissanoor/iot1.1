@@ -359,3 +359,52 @@ model MemberDocument {
 
   @@map("member_documents")
 }
+
+model Template {
+  id             String    @id @default(cuid())
+  name           String    @db.NVarChar(Max)
+  name_ar        String    @db.NVarChar(Max)
+  description    String?   @db.NVarChar(Max)
+  description_ar String?   @db.NVarChar(Max)
+  created_at     DateTime  @default(now()) @db.DateTime
+  updated_at     DateTime  @default(now()) @db.DateTime
+  pages          NewPage[]
+}
+
+model NewPage {
+  id                 String    @id @default(cuid())
+  name               String?   @db.NVarChar(Max)
+  name_ar            String?   @db.NVarChar(Max)
+  slug               String?   @unique
+  seo_description    String?   @db.NVarChar(Max)
+  seo_description_ar String?   @db.NVarChar(Max)
+  status             Int?
+  template_id        String
+  created_at         DateTime? @default(now()) @db.DateTime
+  updated_at         DateTime? @default(now()) @db.DateTime
+  template           Template  @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  sections           Section[]
+}
+
+model Section {
+  id         String    @id @default(cuid())
+  page_id    String
+  name       String    @db.NVarChar(Max)
+  name_ar    String    @db.NVarChar(Max)
+  order      Int
+  created_at DateTime  @default(now()) @db.DateTime
+  updated_at DateTime  @default(now()) @db.DateTime
+  contents   Content[]
+  page       NewPage   @relation(fields: [page_id], references: [id], onDelete: Cascade)
+}
+
+model Content {
+  id         String   @id @default(cuid())
+  section_id String
+  type       String   @db.NVarChar(Max)
+  data       String   @db.NVarChar(Max)
+  created_at DateTime @default(now()) @db.DateTime
+  updated_at DateTime @default(now()) @db.DateTime
+  data_ar    String?  @db.NVarChar(Max)
+  section    Section  @relation(fields: [section_id], references: [id], onDelete: Cascade)
+}

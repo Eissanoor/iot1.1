@@ -41,6 +41,7 @@ const deviceCategoryRoutes = require('./routes/deviceCategoryRoutes');
 const iotDeviceRoutes = require('./routes/iotDeviceRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlanRoutes');
+const pageRoutes = require('./routes/pageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -164,8 +165,9 @@ async function startServer() {
     app.use('/api/iot-devices', iotDeviceRoutes);
     app.use('/api/services', serviceRoutes);
     app.use('/api/subscription-plans', subscriptionPlanRoutes);
+app.use('/api/pages', pageRoutes);
 
-    app.get('/', (req, res) => {
+app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
     });
     // Start server
