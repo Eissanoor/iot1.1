@@ -408,3 +408,16 @@ model Content {
   data_ar    String?  @db.NVarChar(Max)
   section    Section  @relation(fields: [section_id], references: [id], onDelete: Cascade)
 }
+model rainStatus{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
+
+model motionDetection{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
