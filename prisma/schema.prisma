@@ -421,3 +421,15 @@ model motionDetection{
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
 }
+model vibrationDetection{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
+model gasDetection{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
