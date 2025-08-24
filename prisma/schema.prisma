@@ -433,3 +433,56 @@ model gasDetection{
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
 }
+
+model FirstContainer {
+  id              Int      @id @default(autoincrement())
+  name            String
+  name_ar         String
+  description     String?
+  description_ar  String?
+  image           String?  // Path to the image file
+  status          Boolean  @default(true)
+  url             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SecondContainer {
+  id              Int      @id @default(autoincrement())
+  name            String
+  name_ar         String
+  description     String?
+  description_ar  String?
+  image           String?  // Path to the image file
+  status          Boolean  @default(true)
+  url             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ThirdContainer {
+  id              Int      @id @default(autoincrement())
+  name            String
+  name_ar         String
+  description     String?
+  description_ar  String?
+  image           String?  // Path to the image file
+  status          Boolean  @default(true)
+  url             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FourthContainer {
+  id              Int      @id @default(autoincrement())
+  name            String
+  name_ar         String
+  description     String?
+  description_ar  String?
+  image           String?  // Path to the image file
+  status          Boolean  @default(true)
+  url             String?
+  points          String   // Stored as JSON string of array
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

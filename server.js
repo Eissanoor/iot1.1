@@ -42,6 +42,10 @@ const iotDeviceRoutes = require('./routes/iotDeviceRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const subscriptionPlanRoutes = require('./routes/subscriptionPlanRoutes');
 const pageRoutes = require('./routes/pageRoutes');
+const firstContainerRoutes = require('./routes/firstContainerRoutes');
+const secondContainerRoutes = require('./routes/secondContainerRoutes');
+const thirdContainerRoutes = require('./routes/thirdContainerRoutes');
+const fourthContainerRoutes = require('./routes/fourthContainerRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -165,7 +169,11 @@ async function startServer() {
     app.use('/api/iot-devices', iotDeviceRoutes);
     app.use('/api/services', serviceRoutes);
     app.use('/api/subscription-plans', subscriptionPlanRoutes);
-app.use('/api/pages', pageRoutes);
+    app.use('/api/pages', pageRoutes);
+    app.use('/api/first-containers', firstContainerRoutes);
+    app.use('/api/second-containers', secondContainerRoutes);
+    app.use('/api/third-containers', thirdContainerRoutes);
+    app.use('/api/fourth-containers', fourthContainerRoutes);
 
 app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
