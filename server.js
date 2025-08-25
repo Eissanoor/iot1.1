@@ -22,6 +22,7 @@ const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = r
 const temperatureRoutes = require('./routes/temperatureHumidityRoutes');
 const soilMoistureRoutes = require('./routes/soilMoistureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const adminDemoRequestRoutes = require('./routes/adminDemoRequestRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const fuelLevelRoutes = require('./routes/fuelLevelRoutes');
@@ -47,6 +48,7 @@ const secondContainerRoutes = require('./routes/secondContainerRoutes');
 const thirdContainerRoutes = require('./routes/thirdContainerRoutes');
 const fourthContainerRoutes = require('./routes/fourthContainerRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const demoRequestRoutes = require('./routes/demoRequestRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -151,6 +153,7 @@ async function startServer() {
     app.use('/api/temperature', temperatureRoutes);
     app.use('/api/soil-moisture', soilMoistureRoutes);
     app.use('/api/admin', adminRoutes);
+    app.use('/api/admin', adminDemoRequestRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/admin-auth', adminAuthRoutes);
     app.use('/api/fuel-level', fuelLevelRoutes);
@@ -176,6 +179,7 @@ async function startServer() {
     app.use('/api/third-containers', thirdContainerRoutes);
     app.use('/api/fourth-containers', fourthContainerRoutes);
     app.use('/api/comments', commentRoutes);
+    app.use('/api/demo-requests', demoRequestRoutes);
 
 app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');

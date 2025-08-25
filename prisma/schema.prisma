@@ -498,3 +498,14 @@ model Comment {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model DemoRequest {
+  id              Int      @id @default(autoincrement())
+  email           String
+  phoneNumber     String
+  companyName     String
+  message         String?
+  status          String   @default("pending") // pending, contacted, completed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
