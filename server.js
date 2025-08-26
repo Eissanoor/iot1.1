@@ -58,6 +58,47 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
 
+// Request logger middleware with color coding
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const startTime = Date.now();
+  
+  // Log request
+  console.log(`[${timestamp}] \x1b[36m${req.method}\x1b[0m ${req.originalUrl}`);
+  
+  // Store original end function
+  const originalEnd = res.end;
+  
+  // Override end function
+  res.end = function(chunk, encoding) {
+    // Calculate response time
+    const responseTime = Date.now() - startTime;
+    
+    // Determine color based on status code
+    let statusColor;
+    if (res.statusCode >= 500) {
+      // Red for server errors
+      statusColor = '\x1b[31m';
+    } else if (res.statusCode >= 400) {
+      // Yellow for client errors
+      statusColor = '\x1b[33m';
+    } else {
+      // Green for success
+      statusColor = '\x1b[32m';
+    }
+    
+    // Log response with color coding
+    console.log(
+      `[${timestamp}] \x1b[36m${req.method}\x1b[0m ${req.originalUrl} ${statusColor}${res.statusCode}\x1b[0m \x1b[35m${responseTime}ms\x1b[0m`
+    );
+    
+    // Call original end function
+    return originalEnd.apply(this, arguments);
+  };
+  
+  next();
+});
+
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
