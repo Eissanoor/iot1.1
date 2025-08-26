@@ -181,8 +181,27 @@ async function startServer() {
     app.use('/api/comments', commentRoutes);
     app.use('/api/demo-requests', demoRequestRoutes);
 
-app.get('/', (req, res) => {
+    app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
+    });
+    
+    // Handle 404 - Endpoint not found
+    app.use((req, res, next) => {
+      res.status(404).json({
+        success: false,
+        message: 'Endpoint not found',
+        path: req.originalUrl
+      });
+    });
+    
+    // Global error handler
+    app.use((err, req, res, next) => {
+      const statusCode = err.status || 500;
+      res.status(statusCode).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
     });
     // Start server
     app.listen(PORT, () => {
