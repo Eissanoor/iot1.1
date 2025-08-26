@@ -150,7 +150,6 @@ const saveNPKData = async () => {
       
       await NPKSensorData.createNPKData(npkData);
       
-      console.log(`NPK data saved for ${device.name}: N: ${npkData.nitrogen} ppm, P: ${npkData.phosphorus} ppm, K: ${npkData.potassium} ppm, pH: ${npkData.ph}`);
       
       // Log warning if values are extreme
       if (npkData.ph < 5.0 || npkData.ph > 8.0) {

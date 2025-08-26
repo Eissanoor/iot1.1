@@ -81,7 +81,7 @@ async function simulateFuelDecrease() {
       }
     });
     
-    console.log(`Fuel level updated: ${currentFuelLevel.toFixed(2)}%`);
+    
     
     // If fuel level is low, log a warning
     if (currentFuelLevel < 20) {

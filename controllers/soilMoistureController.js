@@ -62,7 +62,7 @@ const saveSoilMoistureData = async () => {
       moisture
     });
     
-    console.log(`Data saved: Soil Moisture: ${moisture}%`);
+    
   } catch (error) {
     console.error('Error saving soil moisture data:', error);
   }

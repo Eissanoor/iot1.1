@@ -70,7 +70,7 @@ const saveSensorData = async () => {
       humidity
     });
     
-    console.log(`Data saved: Temperature: ${temperature}°C, Humidity: ${humidity}%`);
+    
   } catch (error) {
     console.error('Error saving data:', error);
   }

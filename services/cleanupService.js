@@ -82,7 +82,7 @@ const cleanupAllCollections = async () => {
     }
   }
   
-  console.log('Cleanup complete. Results:', results);
+  
   return results;
 };
 
@@ -121,7 +121,7 @@ const checkForLargeCollections = async () => {
     }
   }
   
-  console.log('Large collection check complete. Results:', results);
+  
   return results;
 };
 

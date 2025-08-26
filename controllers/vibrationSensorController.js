@@ -113,8 +113,7 @@ const saveVibrationData = async () => {
       
       await vibrationModel.createVibrationData(vibrationData);
       
-      console.log(`Data saved for ${device.name}: Amplitude: ${vibrationData.amplitude}, Frequency: ${vibrationData.frequency} Hz`);
-      
+     
       // Log warning if vibration is high
       if (vibrationData.amplitude > 0.8) {
         console.log(`WARNING: High vibration detected on ${device.name}!`);
