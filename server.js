@@ -50,6 +50,7 @@ const fourthContainerRoutes = require('./routes/fourthContainerRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const demoRequestRoutes = require('./routes/demoRequestRoutes');
 const headerRoutes = require('./routes/headerRoutes');
+const languagesRoutes = require('./routes/languagesRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 2507;
@@ -223,6 +224,7 @@ async function startServer() {
     app.use('/api/comments', commentRoutes);
     app.use('/api/demo-requests', demoRequestRoutes);
     app.use('/api/headers', headerRoutes);
+    app.use('/api/languages', languagesRoutes);
 
     app.get('/', (req, res) => {
       res.json('FATSAIBACKEND');
