@@ -2,7 +2,7 @@ const thirdContainerModel = require('../models/thirdContainer');
 const { upload, getImageUrl } = require('../utils/uploadUtils');
 const fs = require('fs');
 const path = require('path');
-const createError = require('../utils/createError');
+const {createError} = require('../utils/createError');
 
 // Handle file upload with multer middleware
 const uploadImage = upload.single('image');
