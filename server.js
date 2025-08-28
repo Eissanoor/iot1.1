@@ -104,36 +104,7 @@ app.use((req, res, next) => {
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Fuel level simulation variables
-let currentFuelLevel = 100; // Starting at 100%
-const fuelCapacity = 100;   // Maximum capacity
-const fuelDecreaseRate = 0.5; // Decrease rate per interval
 
-// Function to simulate decreasing fuel level
-async function simulateFuelDecrease() {
-  try {
-    // Decrease fuel level by random amount between 0.1 and fuelDecreaseRate
-    const decrease = Math.random() * fuelDecreaseRate + 0.1;
-    currentFuelLevel = Math.max(0, currentFuelLevel - decrease);
-    
-    // Save the new fuel level to the database
-    await prisma.fuelLevel.create({
-      data: {
-        level: currentFuelLevel,
-        capacity: fuelCapacity
-      }
-    });
-    
-    
-    
-    // If fuel level is low, log a warning
-    if (currentFuelLevel < 20) {
-      console.log('WARNING: Fuel level is low!');
-    }
-  } catch (error) {
-    console.error('Error updating fuel level:', error);
-  }
-}
 
 // Initialize server and connect to database
 async function startServer() {
@@ -147,35 +118,7 @@ async function startServer() {
       .then(results => console.log('Initial cleanup completed:', results))
       .catch(error => console.error('Error in initial cleanup:', error));
     
-    // Set up scenario change intervals
-    setInterval(tempHumidityController.changeScenario, (Math.random() * 3 + 2) * 60 * 1000); // Change temp/humidity scenario every 2-5 minutes
-    setInterval(soilMoistureController.changeScenario, (Math.random() * 5 + 5) * 60 * 1000); // Change soil moisture scenario every 5-10 minutes
-    setInterval(vibrationSensorController.changeScenario, (Math.random() * 4 + 3) * 60 * 1000); // Change vibration scenario every 3-7 minutes
-    setInterval(npkSensorController.changeScenario, (Math.random() * 6 + 4) * 60 * 1000); // Change NPK scenario every 4-10 minutes
 
-    // Schedule cron jobs to run
-    cron.schedule('*/3 * * * * *', () => {
-      tempHumidityController.saveSensorData();
-    });
-
-    cron.schedule('*/5 * * * * *', () => {
-      soilMoistureController.saveSoilMoistureData();
-    });
-
-    // Schedule fuel level simulation every 10 seconds
-    cron.schedule('*/10 * * * * *', () => {
-      simulateFuelDecrease();
-    });
-
-    // Schedule vibration sensor simulation every 7 seconds
-    cron.schedule('*/7 * * * * *', () => {
-      vibrationSensorController.saveVibrationData();
-    });
-    
-    // Schedule NPK sensor simulation every 9 seconds
-    cron.schedule('*/9 * * * * *', () => {
-      npkSensorController.saveNPKData();
-    });
 
     // Schedule regular cleanup cron job to run every minute
     cron.schedule('* * * * *', () => {
@@ -251,7 +194,6 @@ async function startServer() {
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
-      console.log('Cron jobs started - saving sensor data at regular intervals');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
