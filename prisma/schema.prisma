@@ -433,6 +433,18 @@ model gasDetection{
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
 }
+model ultrasonic{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
+model carDetection{
+ id        Int @id @default(autoincrement())
+ status    String 
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @default(now()) @map("updated_at")
+}
 
 model FirstContainer {
   id              Int      @id @default(autoincrement())
