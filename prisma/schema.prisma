@@ -410,7 +410,7 @@ model Content {
 }
 model rainStatus{
  id        Int @id @default(autoincrement())
- status    String 
+ status    Float 
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
 }
@@ -429,7 +429,7 @@ model vibrationDetection{
 }
 model gasDetection{
  id        Int @id @default(autoincrement())
- status    String 
+ status    Float 
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
 }
@@ -441,6 +441,7 @@ model ultrasonic{
 }
 model carDetection{
  id        Int @id @default(autoincrement())
+ distance  Float
  status    String 
  createdAt DateTime @default(now()) @map("created_at")
  updatedAt DateTime @default(now()) @map("updated_at")
