@@ -132,3 +132,66 @@ exports.getHistoricalData = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.getTrends = async (req, res) => {
+  try {
+    // Get period from query parameters (default to 12M)
+    const period = req.query.period || '12M';
+    const type = req.query.type || 'both'; // 'temperature', 'humidity', or 'both'
+    
+    // Validate period parameter
+    const validPeriods = ['12M', '6M', '30D', '7D'];
+    if (!validPeriods.includes(period)) {
+      return res.status(400).json({ 
+        error: 'Invalid period parameter', 
+        message: 'Period must be one of: 12M, 6M, 30D, 7D' 
+      });
+    }
+    
+    // Get trend data
+    const data = await Temperature.getTrends(period);
+    
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'No trend data found for the specified period' });
+    }
+    
+    // Format response based on type
+    let response;
+    
+    if (type === 'temperature') {
+      response = {
+        period,
+        data: data.map(item => ({
+          label: item.month || item.day,
+          value: item.temperature
+        }))
+      };
+    } else if (type === 'humidity') {
+      response = {
+        period,
+        data: data.map(item => ({
+          label: item.month || item.day,
+          value: item.humidity
+        }))
+      };
+    } else {
+      // Both temperature and humidity
+      response = {
+        period,
+        temperature: data.map(item => ({
+          label: item.month || item.day,
+          value: item.temperature
+        })),
+        humidity: data.map(item => ({
+          label: item.month || item.day,
+          value: item.humidity
+        }))
+      };
+    }
+    
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error retrieving trend data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
