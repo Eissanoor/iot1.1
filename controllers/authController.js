@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
+const { getImageUrl } = require('../utils/uploadUtils');
 
 // JWT secret key - should be in environment variables in production
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -187,13 +188,7 @@ exports.getMe = async (req, res) => {
     
     // Return user info (excluding password)
     res.status(200).json({
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        isNfcEnable: user.isNfcEnable,
-        nfcNumber: user.nfcNumber
-      }
+      user:user
     });
   } catch (error) {
     console.error('Error getting user info:', error);
@@ -249,4 +244,130 @@ exports.updateNfcSettings = async (req, res) => {
     console.error('Error updating NFC settings:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-}; 
+};
+
+// Update user profile with optional fields
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const {
+      firstName,
+      lastName,
+      cr_number,
+      cr_activity,
+      company_name_eng,
+      company_name_arabic,
+      company_landline,
+      business_type,
+      zip_code,
+      industry_types,
+      country,
+      state,
+      city,
+      membership_category,
+      user_source,
+      tin_number,
+      gps_location,
+      latitude,
+      longitude
+    } = req.body;
+    
+    // Handle uploaded image file - store full path
+    const image = req.file ? getImageUrl(req.file.filename) : undefined;
+    
+    // Find user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found' 
+      });
+    }
+    
+    // Prepare update data - only include fields that are provided
+    const updateData = {};
+    
+    // Add fields to update data only if they are provided in the request
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (cr_number !== undefined) updateData.cr_number = cr_number;
+    if (cr_activity !== undefined) updateData.cr_activity = cr_activity;
+    if (company_name_eng !== undefined) updateData.company_name_eng = company_name_eng;
+    if (company_name_arabic !== undefined) updateData.company_name_arabic = company_name_arabic;
+    if (company_landline !== undefined) updateData.company_landline = company_landline;
+    if (business_type !== undefined) updateData.business_type = business_type;
+    if (zip_code !== undefined) updateData.zip_code = zip_code;
+    if (industry_types !== undefined) updateData.industry_types = industry_types;
+    if (country !== undefined) updateData.country = country;
+    if (state !== undefined) updateData.state = state;
+    if (city !== undefined) updateData.city = city;
+    if (membership_category !== undefined) updateData.membership_category = membership_category;
+    if (user_source !== undefined) updateData.user_source = user_source;
+    if (tin_number !== undefined) updateData.tin_number = tin_number;
+    if (image !== undefined) updateData.image = image;
+    if (gps_location !== undefined) updateData.gps_location = gps_location;
+    if (latitude !== undefined) updateData.latitude = latitude;
+    if (longitude !== undefined) updateData.longitude = longitude;
+    
+    // Validate business_type if provided
+    if (business_type && !['organization', 'individual', 'family business'].includes(business_type)) {
+      return res.status(400).json({
+        error: 'Invalid business_type. Must be one of: organization, individual, family business'
+      });
+    }
+    
+    // Validate industry_types if provided (should be valid JSON string)
+    if (industry_types) {
+      try {
+        JSON.parse(industry_types);
+      } catch (error) {
+        return res.status(400).json({
+          error: 'Invalid industry_types format. Must be a valid JSON string'
+        });
+      }
+    }
+    
+    // If no fields to update, return error
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        error: 'No fields provided for update'
+      });
+    }
+    
+    // Update user profile
+    const updatedUser = await User.updateById(userId, updateData);
+    
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        isNfcEnable: updatedUser.isNfcEnable,
+        nfcNumber: updatedUser.nfcNumber,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        cr_number: updatedUser.cr_number,
+        cr_activity: updatedUser.cr_activity,
+        company_name_eng: updatedUser.company_name_eng,
+        company_name_arabic: updatedUser.company_name_arabic,
+        company_landline: updatedUser.company_landline,
+        business_type: updatedUser.business_type,
+        zip_code: updatedUser.zip_code,
+        industry_types: updatedUser.industry_types,
+        country: updatedUser.country,
+        state: updatedUser.state,
+        city: updatedUser.city,
+        membership_category: updatedUser.membership_category,
+        user_source: updatedUser.user_source,
+        tin_number: updatedUser.tin_number,
+        image: updatedUser.image,
+        gps_location: updatedUser.gps_location,
+        latitude: updatedUser.latitude,
+        longitude: updatedUser.longitude
+      }
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

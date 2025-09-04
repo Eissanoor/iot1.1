@@ -36,6 +36,29 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+
+   //optional fields
+   firstName   String?
+   lastName    String?
+   cr_number           String? @db.NVarChar(100)
+  cr_activity         String? @db.NVarChar(Max)
+  company_name_eng    String? @db.NVarChar(Max)
+  company_name_arabic String? @db.NVarChar(Max)
+  company_landline    String? @db.NVarChar(Max)
+  business_type       String? @db.NVarChar(50) // organization, individual/family business
+  zip_code            String? @db.VarChar(50)
+  industry_types      String? @db.NVarChar(Max) // JSON string
+  country             String? @db.NVarChar(100)
+  state               String? @db.NVarChar(100)
+  city                String? @db.NVarChar(100)
+  membership_category String? @db.NVarChar(50)
+  user_source         String? @default("fatsAi") @db.NVarChar(20) // gst, printpack
+  tin_number          String? @db.NVarChar(100)
+  image               String?
+  gps_location String? @db.NVarChar(Max)
+  latitude     String?
+  longitude    String?
+
   // Relations
   user_subscriptions UserSubscription[]
   documents_owned    MemberDocument[]   @relation("DocumentOwner")

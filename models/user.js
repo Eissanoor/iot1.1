@@ -30,7 +30,7 @@ class User {
   // Find user by ID
   static async findById(id) {
     return await prisma.user.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: id }
     });
   }
   
@@ -54,7 +54,7 @@ class User {
   // Update user by ID
   static async updateById(id, data) {
     return await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data
     });
   }
