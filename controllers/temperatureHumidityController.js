@@ -1,14 +1,29 @@
 const Temperature = require('../models/temperatureData');
 
+// Maximum number of records to keep in the database
+const MAX_RECORDS = 100;
+
 // Controller methods
 exports.createData = async (req, res) => {
   try {
     const { temperature, humidity } = req.body;
     
+    // First create the new record
     await Temperature.create({
       temperature: parseFloat(temperature),
       humidity: parseFloat(humidity)
     });
+    
+    // Check if we need to clean up old records
+    const count = await Temperature.count();
+    if (count > MAX_RECORDS) {
+      // Calculate how many records to delete
+      const deleteCount = count - MAX_RECORDS;
+      
+      // Delete oldest records
+      await Temperature.deleteOldest(deleteCount);
+      console.log(`Deleted ${deleteCount} oldest temperature records to maintain limit of ${MAX_RECORDS}`);
+    }
     
     res.status(201).json({ message: 'Data saved successfully' });
   } catch (error) {

@@ -76,6 +76,26 @@ const count = () => {
   return prisma.nPKSensor.count();
 };
 
+// Delete oldest NPK data entries
+const deleteOldest = async (count) => {
+  // Find the oldest records
+  const oldestRecords = await prisma.nPKSensor.findMany({
+    orderBy: { timestamp: 'asc' },
+    take: count,
+    select: { id: true }
+  });
+  
+  // Extract IDs
+  const idsToDelete = oldestRecords.map(record => record.id);
+  
+  // Delete these records
+  return prisma.nPKSensor.deleteMany({
+    where: {
+      id: { in: idsToDelete }
+    }
+  });
+};
+
 module.exports = {
   createNPKData,
   getAllNPKData,
@@ -84,5 +104,6 @@ module.exports = {
   getNPKDataByDeviceId,
   getNPKDataByTimeRange,
   deleteNPKData,
-  count
+  count,
+  deleteOldest
 };

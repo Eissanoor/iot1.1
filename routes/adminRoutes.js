@@ -1,12 +1,88 @@
 const express = require('express');
 const router = express.Router();
-const { cleanupAllCollections, cleanupConfig, checkForLargeCollections } = require('../services/cleanupService');
 const prisma = require('../prisma/client');
+
+// Sensor models
+const Temperature = require('../models/temperatureData');
+const SoilMoisture = require('../models/soilMoistureData');
+const FuelLevel = require('../models/fuelLevelData');
+const VibrationSensor = require('../models/vibrationSensorData');
+const NPKSensor = require('../models/npkSensorData');
+
+// Collection configuration
+const collectionsConfig = {
+  temperature: {
+    model: Temperature,
+    name: 'Temperature',
+    maxRecords: 100
+  },
+  soilMoisture: {
+    model: SoilMoisture,
+    name: 'SoilMoistureData',
+    maxRecords: 100
+  },
+  fuelLevel: {
+    model: FuelLevel,
+    name: 'FuelLevel',
+    maxRecords: 100
+  },
+  vibrationSensor: {
+    model: VibrationSensor,
+    name: 'VibrationSensor',
+    maxRecords: 100
+  },
+  npkSensor: {
+    model: NPKSensor,
+    name: 'NPKSensor',
+    maxRecords: 100
+  }
+};
+
+// Helper function to clean up a collection
+const cleanupCollection = async (model, maxRecords) => {
+  try {
+    // Count documents in the collection
+    const count = await model.count();
+    
+    // Check if cleanup is needed
+    if (count > maxRecords) {
+      console.log(`Collection ${model.constructor.name} has ${count} records, exceeding limit of ${maxRecords}. Cleaning up...`);
+      
+      // Calculate how many records to delete
+      const deleteCount = count - maxRecords;
+      
+      // Delete oldest records
+      const result = await model.deleteOldest(deleteCount);
+      
+      return {
+        deletedCount: result.count,
+        remainingCount: count - result.count
+      };
+    }
+    
+    return {
+      deletedCount: 0,
+      remainingCount: count
+    };
+  } catch (error) {
+    console.error(`Error cleaning up collection:`, error);
+    throw error;
+  }
+};
 
 // Route to manually trigger cleanup of all collections
 router.post('/cleanup', async (req, res) => {
   try {
-    const results = await cleanupAllCollections();
+    const results = {};
+    
+    for (const [key, config] of Object.entries(collectionsConfig)) {
+      try {
+        results[key] = await cleanupCollection(config.model, config.maxRecords);
+      } catch (error) {
+        results[key] = { error: error.message };
+      }
+    }
+    
     res.status(200).json({
       message: 'Cleanup process completed successfully',
       results
@@ -17,29 +93,15 @@ router.post('/cleanup', async (req, res) => {
   }
 });
 
-// Route to manually trigger aggressive cleanup for large collections
-router.post('/cleanup/force', async (req, res) => {
-  try {
-    const results = await checkForLargeCollections();
-    res.status(200).json({
-      message: 'Aggressive cleanup process completed successfully',
-      results
-    });
-  } catch (error) {
-    console.error('Error during aggressive cleanup:', error);
-    res.status(500).json({ error: 'Error during aggressive cleanup process' });
-  }
-});
-
 // Route to get collection sizes
 router.get('/collections/size', async (req, res) => {
   try {
     const sizes = {};
     
-    for (const [key, config] of Object.entries(cleanupConfig)) {
+    for (const [key, config] of Object.entries(collectionsConfig)) {
       const count = await config.model.count();
       sizes[key] = {
-        collection: config.model.modelName,
+        collection: config.name,
         count,
         maxRecords: config.maxRecords,
         status: count > config.maxRecords ? 'exceeds limit' : 'within limit'
@@ -58,11 +120,10 @@ router.get('/cleanup/config', (req, res) => {
   // Convert models to collection names for the response
   const configInfo = {};
   
-  for (const [key, config] of Object.entries(cleanupConfig)) {
+  for (const [key, config] of Object.entries(collectionsConfig)) {
     configInfo[key] = {
-      collection: config.model.modelName,
-      maxRecords: config.maxRecords,
-      deleteCount: config.deleteCount
+      collection: config.name,
+      maxRecords: config.maxRecords
     };
   }
   
@@ -72,15 +133,14 @@ router.get('/cleanup/config', (req, res) => {
 // Route to update cleanup configuration
 router.put('/cleanup/config', async (req, res) => {
   try {
-    const { collection, maxRecords, deleteCount } = req.body;
+    const { collection, maxRecords } = req.body;
     
     // Find the configuration for the specified collection
     let found = false;
-    for (const [key, config] of Object.entries(cleanupConfig)) {
-      if (config.model.modelName === collection) {
+    for (const [key, config] of Object.entries(collectionsConfig)) {
+      if (config.name === collection) {
         // Update configuration
         if (maxRecords !== undefined) config.maxRecords = parseInt(maxRecords);
-        if (deleteCount !== undefined) config.deleteCount = parseInt(deleteCount);
         found = true;
         break;
       }
@@ -99,4 +159,4 @@ router.put('/cleanup/config', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

@@ -1,4 +1,3 @@
-const { PrismaClient } = require('@prisma/client');
 const prisma = require('../prisma/client');
 
 // Create new vibration sensor data
@@ -74,6 +73,31 @@ const deleteVibrationData = async (id) => {
   });
 };
 
+// Count vibration data
+const count = () => {
+  return prisma.vibrationSensor.count();
+};
+
+// Delete oldest vibration data entries
+const deleteOldest = async (count) => {
+  // Find the oldest records
+  const oldestRecords = await prisma.vibrationSensor.findMany({
+    orderBy: { timestamp: 'asc' },
+    take: count,
+    select: { id: true }
+  });
+  
+  // Extract IDs
+  const idsToDelete = oldestRecords.map(record => record.id);
+  
+  // Delete these records
+  return prisma.vibrationSensor.deleteMany({
+    where: {
+      id: { in: idsToDelete }
+    }
+  });
+};
+
 module.exports = {
   createVibrationData,
   getAllVibrationData,
@@ -81,5 +105,7 @@ module.exports = {
   getLatestVibrationData,
   getVibrationDataByDeviceId,
   getVibrationDataByTimeRange,
-  deleteVibrationData
-}; 
+  deleteVibrationData,
+  count,
+  deleteOldest
+};

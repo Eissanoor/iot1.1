@@ -30,5 +30,24 @@ module.exports = {
     return prisma.soilMoistureData.deleteMany({
       where
     });
+  },
+  // Delete oldest records
+  deleteOldest: async (count) => {
+    // Find the oldest records
+    const oldestRecords = await prisma.soilMoistureData.findMany({
+      orderBy: { timestamp: 'asc' },
+      take: count,
+      select: { id: true }
+    });
+    
+    // Extract IDs
+    const idsToDelete = oldestRecords.map(record => record.id);
+    
+    // Delete these records
+    return prisma.soilMoistureData.deleteMany({
+      where: {
+        id: { in: idsToDelete }
+      }
+    });
   }
-}; 
+};

@@ -1,22 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const cron = require('node-cron');
 const path = require('path');
 require('dotenv').config();
 
 // Import Prisma client
 const prisma = require('./prisma/client');
 
-// Import controllers for cron jobs
-const tempHumidityController = require('./controllers/temperatureHumidityController');
-const soilMoistureController = require('./controllers/soilMoistureController');
-const fuelLevelController = require('./controllers/fuelLevelController');
-const vibrationSensorController = require('./controllers/vibrationSensorController');
-const npkSensorController = require('./controllers/npkSensorController');
-
-// Import cleanup service
-const { cleanupAllCollections, runInitialCleanup, checkForLargeCollections } = require('./services/cleanupService');
 
 // Import routes
 const temperatureRoutes = require('./routes/temperatureHumidityRoutes');
@@ -48,55 +38,30 @@ const secondContainerRoutes = require('./routes/secondContainerRoutes');
 const thirdContainerRoutes = require('./routes/thirdContainerRoutes');
 const fourthContainerRoutes = require('./routes/fourthContainerRoutes');
 const commentRoutes = require('./routes/commentRoutes');
-const demoRequestRoutes = require('./routes/demoRequestRoutes');
 const headerRoutes = require('./routes/headerRoutes');
+const demoRequestRoutes = require('./routes/demoRequestRoutes');
 const languagesRoutes = require('./routes/languagesRoutes');
 
+// Initialize Express app
 const app = express();
+
+// Set port
 const PORT = process.env.PORT || 2507;
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Request logger middleware with color coding
+// Configure CORS
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Add a simple request logger middleware
 app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  const startTime = Date.now();
-  
-  // Log request
-  console.log(`[${timestamp}] \x1b[36m${req.method}\x1b[0m ${req.originalUrl}`);
-  
-  // Store original end function
-  const originalEnd = res.end;
-  
-  // Override end function
-  res.end = function(chunk, encoding) {
-    // Calculate response time
-    const responseTime = Date.now() - startTime;
-    
-    // Determine color based on status code
-    let statusColor;
-    if (res.statusCode >= 500) {
-      // Red for server errors
-      statusColor = '\x1b[31m';
-    } else if (res.statusCode >= 400) {
-      // Yellow for client errors
-      statusColor = '\x1b[33m';
-    } else {
-      // Green for success
-      statusColor = '\x1b[32m';
-    }
-    
-    // Log response with color coding
-    console.log(
-      `[${timestamp}] \x1b[36m${req.method}\x1b[0m ${req.originalUrl} ${statusColor}${res.statusCode}\x1b[0m \x1b[35m${responseTime}ms\x1b[0m`
-    );
-    
-    // Call original end function
-    return originalEnd.apply(this, arguments);
-  };
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   
   next();
 });
@@ -113,28 +78,6 @@ async function startServer() {
     await prisma.$connect();
     console.log('Connected to SQL Server database');
     
-    // Run initial cleanup on startup to handle existing large collections
-    runInitialCleanup()
-      .then(results => console.log('Initial cleanup completed:', results))
-      .catch(error => console.error('Error in initial cleanup:', error));
-    
-
-
-    // Schedule regular cleanup cron job to run every minute
-    cron.schedule('* * * * *', () => {
-      cleanupAllCollections()
-        .then(results => console.log('Regular cleanup completed'))
-        .catch(error => console.error('Error in regular cleanup:', error));
-    });
-
-    // Schedule aggressive cleanup check every 5 minutes
-    // This will handle cases where collections grow rapidly
-    cron.schedule('*/5 * * * *', () => {
-      checkForLargeCollections()
-        .then(results => console.log('Aggressive cleanup check completed'))
-        .catch(error => console.error('Error in aggressive cleanup check:', error));
-    });
-
     // API Routes
     app.use('/api/temperature', temperatureRoutes);
     app.use('/api/soil-moisture', soilMoistureRoutes);
@@ -147,53 +90,31 @@ async function startServer() {
     app.use('/api/categories', categoryRoutes);
     app.use('/api/subcategories', subCategoryRoutes);
     app.use('/api/locations', locationRoutes);
-    app.use('/api/vibration-sensor', vibrationSensorRoutes);
-    app.use('/api/megamenu', megaMenuRoutes);
-    app.use('/api/submegamenu', subMegaMenuRoutes);
+    app.use('/api/vibration', vibrationSensorRoutes);
+    app.use('/api/mega-menu', megaMenuRoutes);
+    app.use('/api/sub-mega-menu', subMegaMenuRoutes);
     app.use('/api/brands', brandRoutes);
     app.use('/api/asset-conditions', assetConditionRoutes);
     app.use('/api/employees', employeeListRoutes);
     app.use('/api/departments', departmentRoutes);
-    app.use('/api/npk-sensor', npkSensorRoutes);
+    app.use('/api/npk', npkSensorRoutes);
     app.use('/api/device-categories', deviceCategoryRoutes);
     app.use('/api/iot-devices', iotDeviceRoutes);
     app.use('/api/services', serviceRoutes);
     app.use('/api/subscription-plans', subscriptionPlanRoutes);
     app.use('/api/pages', pageRoutes);
-    app.use('/api/first-containers', firstContainerRoutes);
-    app.use('/api/second-containers', secondContainerRoutes);
-    app.use('/api/third-containers', thirdContainerRoutes);
-    app.use('/api/fourth-containers', fourthContainerRoutes);
+    app.use('/api/first-container', firstContainerRoutes);
+    app.use('/api/second-container', secondContainerRoutes);
+    app.use('/api/third-container', thirdContainerRoutes);
+    app.use('/api/fourth-container', fourthContainerRoutes);
     app.use('/api/comments', commentRoutes);
+    app.use('/api/header', headerRoutes);
     app.use('/api/demo-requests', demoRequestRoutes);
-    app.use('/api/headers', headerRoutes);
     app.use('/api/languages', languagesRoutes);
 
-    app.get('/', (req, res) => {
-      res.json('FATSAIBACKEND');
-    });
-    
-    // Handle 404 - Endpoint not found
-    app.use((req, res, next) => {
-      res.status(404).json({
-        success: false,
-        message: 'Endpoint not found',
-        path: req.originalUrl
-      });
-    });
-    
-    // Global error handler
-    app.use((err, req, res, next) => {
-      const statusCode = err.status || 500;
-      res.status(statusCode).json({
-        success: false,
-        message: err.message || 'Internal Server Error',
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-      });
-    });
-    // Start server
+    // Start the server
     app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -202,21 +123,4 @@ async function startServer() {
 }
 
 // Start the server
-startServer()
-  .catch(error => {
-    console.error('Unhandled error during server startup:', error);
-    process.exit(1);
-  });
-
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down server...');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('Shutting down server...');
-  await prisma.$disconnect();
-  process.exit(0);
-});
+startServer();

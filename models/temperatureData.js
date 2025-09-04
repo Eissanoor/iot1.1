@@ -32,6 +32,25 @@ module.exports = {
       where
     });
   },
+  // Delete oldest records
+  deleteOldest: async (count) => {
+    // Find the oldest records
+    const oldestRecords = await prisma.temperature.findMany({
+      orderBy: { timestamp: 'asc' },
+      take: count,
+      select: { id: true }
+    });
+    
+    // Extract IDs
+    const idsToDelete = oldestRecords.map(record => record.id);
+    
+    // Delete these records
+    return prisma.temperature.deleteMany({
+      where: {
+        id: { in: idsToDelete }
+      }
+    });
+  },
   getStats: (since) => {
     return prisma.temperature.findMany({
       where: {

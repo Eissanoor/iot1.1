@@ -1,4 +1,3 @@
-const { PrismaClient } = require('@prisma/client');
 const prisma = require('../prisma/client');
 
 /**
@@ -65,9 +64,43 @@ async function getFuelLevelDataByDateRange(range) {
   });
 }
 
+/**
+ * Count fuel level data entries
+ * @returns {Promise<number>} Count of fuel level data entries
+ */
+async function count() {
+  return await prisma.fuelLevel.count();
+}
+
+/**
+ * Delete oldest fuel level data entries
+ * @param {number} count - Number of oldest entries to delete
+ * @returns {Promise<Object>} Result of delete operation
+ */
+async function deleteOldest(count) {
+  // Find the oldest records
+  const oldestRecords = await prisma.fuelLevel.findMany({
+    orderBy: { timestamp: 'asc' },
+    take: count,
+    select: { id: true }
+  });
+  
+  // Extract IDs
+  const idsToDelete = oldestRecords.map(record => record.id);
+  
+  // Delete these records
+  return prisma.fuelLevel.deleteMany({
+    where: {
+      id: { in: idsToDelete }
+    }
+  });
+}
+
 module.exports = {
   createFuelLevelData,
   getAllFuelLevelData,
   getLatestFuelLevelData,
   getFuelLevelDataByDateRange,
-}; 
+  count,
+  deleteOldest
+};
