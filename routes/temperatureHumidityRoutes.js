@@ -6,5 +6,7 @@ const tempHumidityController = require('../controllers/temperatureHumidityContro
 router.post('/', tempHumidityController.createData);
 router.get('/', tempHumidityController.getAllData);
 router.get('/latest', tempHumidityController.getLatestData);
+router.get('/stats', tempHumidityController.getStats);
+router.get('/historical', tempHumidityController.getHistoricalData);
 
-module.exports = router; 
+module.exports = router;

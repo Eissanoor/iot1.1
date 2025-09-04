@@ -58,4 +58,62 @@ exports.getLatestData = async (req, res) => {
     console.error('Error retrieving latest data:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-}; 
+};
+
+exports.getStats = async (req, res) => {
+  try {
+    // Get time range from query parameters (default to last 24 hours)
+    const hours = parseInt(req.query.hours) || 24;
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+    // Get aggregated data
+    const stats = await Temperature.getStats(since);
+    
+    if (!stats || !stats.length) {
+      return res.status(404).json({ message: 'No temperature data found for the specified period' });
+    }
+    
+    // Calculate min, max, avg values
+    const result = {
+      temperature: {
+        current: stats[0].temperature,
+        min: Math.min(...stats.map(d => d.temperature)),
+        max: Math.max(...stats.map(d => d.temperature)),
+        avg: parseFloat((stats.reduce((sum, d) => sum + d.temperature, 0) / stats.length).toFixed(1))
+      },
+      humidity: {
+        current: stats[0].humidity,
+        min: Math.min(...stats.map(d => d.humidity)),
+        max: Math.max(...stats.map(d => d.humidity)),
+        avg: parseFloat((stats.reduce((sum, d) => sum + d.humidity, 0) / stats.length).toFixed(1))
+      },
+      // Calculate percentage change compared to average
+      trends: {
+        temperature: parseFloat(((stats[0].temperature - stats[stats.length-1].temperature) / stats[stats.length-1].temperature * 100).toFixed(1)),
+        humidity: parseFloat(((stats[0].humidity - stats[stats.length-1].humidity) / stats[stats.length-1].humidity * 100).toFixed(1))
+      }
+    };
+    
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error retrieving stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getHistoricalData = async (req, res) => {
+  try {
+    // Get time range from query parameters
+    const days = parseInt(req.query.days) || 7; // Default to 7 days
+    const interval = req.query.interval || 'hour'; // 'hour', 'day'
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    
+    // Get historical data
+    const data = await Temperature.getHistorical(since, interval);
+    
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error retrieving historical data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
