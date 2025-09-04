@@ -58,6 +58,28 @@ model User {
   gps_location String? @db.NVarChar(Max)
   latitude     String?
   longitude    String?
+  
+  // Additional user profile fields
+  phoneNo             String? @db.NVarChar(20)
+  dateOfBirth         DateTime?
+  gender              String? @db.NVarChar(10)
+  displayName         String? @db.NVarChar(100)
+  bio                 String? @db.NVarChar(Max)
+  language            String? @db.NVarChar(10)
+  emailNotification   Boolean @default(true)
+  smsAlert            Boolean @default(false)
+  pushNotification    Boolean @default(true)
+  buildingNumber      String? @db.NVarChar(50)
+  companySize         String? @db.NVarChar(50)
+  website             String? @db.NVarChar(Max)
+  bAddress            String? @db.NVarChar(Max)
+  bBuildingNumber     String? @db.NVarChar(50)
+  bCountry            String? @db.NVarChar(100)
+  bState              String? @db.NVarChar(100)
+  bCity               String? @db.NVarChar(100)
+  bZipCode            String? @db.VarChar(50)
+  vatNumber           String? @db.NVarChar(100)
+  commercialRegistration String? @db.NVarChar(100)
 
   // Relations
   user_subscriptions UserSubscription[]

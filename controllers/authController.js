@@ -269,7 +269,27 @@ exports.updateProfile = async (req, res) => {
       tin_number,
       gps_location,
       latitude,
-      longitude
+      longitude,
+      phoneNo,
+      dateOfBirth,
+      gender,
+      displayName,
+      bio,
+      language,
+      emailNotification,
+      smsAlert,
+      pushNotification,
+      buildingNumber,
+      companySize,
+      website,
+      bAddress,
+      bBuildingNumber,
+      bCountry,
+      bState,
+      bCity,
+      bZipCode,
+      vatNumber,
+      commercialRegistration
     } = req.body;
     
     // Handle uploaded image file - store full path
@@ -308,10 +328,65 @@ exports.updateProfile = async (req, res) => {
     if (latitude !== undefined) updateData.latitude = latitude;
     if (longitude !== undefined) updateData.longitude = longitude;
     
+    // Additional profile fields
+    if (phoneNo !== undefined) updateData.phoneNo = phoneNo;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (gender !== undefined) updateData.gender = gender;
+    if (displayName !== undefined) updateData.displayName = displayName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (language !== undefined) updateData.language = language;
+    if (emailNotification !== undefined) updateData.emailNotification = emailNotification;
+    if (smsAlert !== undefined) updateData.smsAlert = smsAlert;
+    if (pushNotification !== undefined) updateData.pushNotification = pushNotification;
+    if (buildingNumber !== undefined) updateData.buildingNumber = buildingNumber;
+    if (companySize !== undefined) updateData.companySize = companySize;
+    if (website !== undefined) updateData.website = website;
+    if (bAddress !== undefined) updateData.bAddress = bAddress;
+    if (bBuildingNumber !== undefined) updateData.bBuildingNumber = bBuildingNumber;
+    if (bCountry !== undefined) updateData.bCountry = bCountry;
+    if (bState !== undefined) updateData.bState = bState;
+    if (bCity !== undefined) updateData.bCity = bCity;
+    if (bZipCode !== undefined) updateData.bZipCode = bZipCode;
+    if (vatNumber !== undefined) updateData.vatNumber = vatNumber;
+    if (commercialRegistration !== undefined) updateData.commercialRegistration = commercialRegistration;
+    
     // Validate business_type if provided
     if (business_type && !['organization', 'individual', 'family business'].includes(business_type)) {
       return res.status(400).json({
         error: 'Invalid business_type. Must be one of: organization, individual, family business'
+      });
+    }
+    
+    // Validate gender if provided
+    if (gender && !['male', 'female', 'other'].includes(gender.toLowerCase())) {
+      return res.status(400).json({
+        error: 'Invalid gender. Must be one of: male, female, other'
+      });
+    }
+    
+    // Validate boolean notification fields
+    if (emailNotification !== undefined && typeof emailNotification !== 'boolean') {
+      return res.status(400).json({
+        error: 'emailNotification must be a boolean value (true or false)'
+      });
+    }
+    
+    if (smsAlert !== undefined && typeof smsAlert !== 'boolean') {
+      return res.status(400).json({
+        error: 'smsAlert must be a boolean value (true or false)'
+      });
+    }
+    
+    if (pushNotification !== undefined && typeof pushNotification !== 'boolean') {
+      return res.status(400).json({
+        error: 'pushNotification must be a boolean value (true or false)'
+      });
+    }
+    
+    // Validate dateOfBirth format if provided
+    if (dateOfBirth && isNaN(Date.parse(dateOfBirth))) {
+      return res.status(400).json({
+        error: 'Invalid dateOfBirth format. Please provide a valid date'
       });
     }
     
@@ -363,7 +438,27 @@ exports.updateProfile = async (req, res) => {
         image: updatedUser.image,
         gps_location: updatedUser.gps_location,
         latitude: updatedUser.latitude,
-        longitude: updatedUser.longitude
+        longitude: updatedUser.longitude,
+        phoneNo: updatedUser.phoneNo,
+        dateOfBirth: updatedUser.dateOfBirth,
+        gender: updatedUser.gender,
+        displayName: updatedUser.displayName,
+        bio: updatedUser.bio,
+        language: updatedUser.language,
+        emailNotification: updatedUser.emailNotification,
+        smsAlert: updatedUser.smsAlert,
+        pushNotification: updatedUser.pushNotification,
+        buildingNumber: updatedUser.buildingNumber,
+        companySize: updatedUser.companySize,
+        website: updatedUser.website,
+        bAddress: updatedUser.bAddress,
+        bBuildingNumber: updatedUser.bBuildingNumber,
+        bCountry: updatedUser.bCountry,
+        bState: updatedUser.bState,
+        bCity: updatedUser.bCity,
+        bZipCode: updatedUser.bZipCode,
+        vatNumber: updatedUser.vatNumber,
+        commercialRegistration: updatedUser.commercialRegistration
       }
     });
   } catch (error) {
