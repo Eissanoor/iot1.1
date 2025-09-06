@@ -303,6 +303,46 @@ exports.updateProfile = async (req, res) => {
       });
     }
     
+    // Helper function to convert string booleans to actual booleans
+    const convertToBoolean = (value) => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        if (value.toLowerCase() === 'true') return true;
+        if (value.toLowerCase() === 'false') return false;
+      }
+      return null; // Invalid value
+    };
+
+    // Validate and convert boolean notification fields
+    let convertedEmailNotification, convertedSmsAlert, convertedPushNotification;
+    
+    if (emailNotification !== undefined) {
+      convertedEmailNotification = convertToBoolean(emailNotification);
+      if (convertedEmailNotification === null) {
+        return res.status(400).json({
+          error: 'emailNotification must be a boolean value (true or false)'
+        });
+      }
+    }
+    
+    if (smsAlert !== undefined) {
+      convertedSmsAlert = convertToBoolean(smsAlert);
+      if (convertedSmsAlert === null) {
+        return res.status(400).json({
+          error: 'smsAlert must be a boolean value (true or false)'
+        });
+      }
+    }
+    
+    if (pushNotification !== undefined) {
+      convertedPushNotification = convertToBoolean(pushNotification);
+      if (convertedPushNotification === null) {
+        return res.status(400).json({
+          error: 'pushNotification must be a boolean value (true or false)'
+        });
+      }
+    }
+
     // Prepare update data - only include fields that are provided
     const updateData = {};
     
@@ -335,9 +375,9 @@ exports.updateProfile = async (req, res) => {
     if (displayName !== undefined) updateData.displayName = displayName;
     if (bio !== undefined) updateData.bio = bio;
     if (language !== undefined) updateData.language = language;
-    if (emailNotification !== undefined) updateData.emailNotification = emailNotification;
-    if (smsAlert !== undefined) updateData.smsAlert = smsAlert;
-    if (pushNotification !== undefined) updateData.pushNotification = pushNotification;
+    if (emailNotification !== undefined) updateData.emailNotification = convertedEmailNotification;
+    if (smsAlert !== undefined) updateData.smsAlert = convertedSmsAlert;
+    if (pushNotification !== undefined) updateData.pushNotification = convertedPushNotification;
     if (buildingNumber !== undefined) updateData.buildingNumber = buildingNumber;
     if (companySize !== undefined) updateData.companySize = companySize;
     if (website !== undefined) updateData.website = website;
@@ -361,25 +401,6 @@ exports.updateProfile = async (req, res) => {
     if (gender && !['male', 'female', 'other'].includes(gender.toLowerCase())) {
       return res.status(400).json({
         error: 'Invalid gender. Must be one of: male, female, other'
-      });
-    }
-    
-    // Validate boolean notification fields
-    if (emailNotification !== undefined && typeof emailNotification !== 'boolean') {
-      return res.status(400).json({
-        error: 'emailNotification must be a boolean value (true or false)'
-      });
-    }
-    
-    if (smsAlert !== undefined && typeof smsAlert !== 'boolean') {
-      return res.status(400).json({
-        error: 'smsAlert must be a boolean value (true or false)'
-      });
-    }
-    
-    if (pushNotification !== undefined && typeof pushNotification !== 'boolean') {
-      return res.status(400).json({
-        error: 'pushNotification must be a boolean value (true or false)'
       });
     }
     
