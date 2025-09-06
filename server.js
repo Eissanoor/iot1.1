@@ -93,8 +93,8 @@ async function startServer() {
     app.use('/api/subcategories', subCategoryRoutes);
     app.use('/api/locations', locationRoutes);
     app.use('/api/vibration', vibrationSensorRoutes);
-    app.use('/api/mega-menu', megaMenuRoutes);
-    app.use('/api/sub-mega-menu', subMegaMenuRoutes);
+    app.use('/api/megamenu', megaMenuRoutes);
+    app.use('/api/submegamenu', subMegaMenuRoutes);
     app.use('/api/brands', brandRoutes);
     app.use('/api/asset-conditions', assetConditionRoutes);
     app.use('/api/employees', employeeListRoutes);
@@ -105,12 +105,12 @@ async function startServer() {
     app.use('/api/services', serviceRoutes);
     app.use('/api/subscription-plans', subscriptionPlanRoutes);
     app.use('/api/pages', pageRoutes);
-    app.use('/api/first-container', firstContainerRoutes);
-    app.use('/api/second-container', secondContainerRoutes);
-    app.use('/api/third-container', thirdContainerRoutes);
-    app.use('/api/fourth-container', fourthContainerRoutes);
+    app.use('/api/first-containers', firstContainerRoutes);
+    app.use('/api/second-containers', secondContainerRoutes);
+    app.use('/api/third-containers', thirdContainerRoutes);
+    app.use('/api/fourth-containers', fourthContainerRoutes);
     app.use('/api/comments', commentRoutes);
-    app.use('/api/header', headerRoutes);
+    app.use('/api/headers', headerRoutes);
     app.use('/api/demo-requests', demoRequestRoutes);
     app.use('/api/languages', languagesRoutes);
     app.use('/api/gas-detection', gasDetectionRoutes);
