@@ -263,6 +263,63 @@ const sendDemoRequestEmail = async (data) => {
   }
 };
 
+// Send multiple emails utility
+const sendMultipleEmails = async (emailData) => {
+  try {
+    const transporter = createTransporter();
+    const results = [];
+
+    for (const email of emailData.emailData) {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || '"IoT Solutions" <noreply@iotsolutions.com>',
+        to: email.toEmail,
+        subject: email.subject,
+        html: email.htmlContent,
+        attachments: email.attachments || []
+      };
+
+      console.log('Sending email to:', mailOptions.to);
+      
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully:', info.messageId);
+      results.push(info);
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Failed to send emails:', error);
+    throw error;
+  }
+};
+
+// Generate QR Code utility
+const generateQRCode = async (data) => {
+  try {
+    // For now, return a placeholder. You can implement actual QR generation later
+    return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
+  } catch (error) {
+    console.error('QR Code generation failed:', error);
+    return null;
+  }
+};
+
+// Convert EJS to PDF utility (placeholder)
+const convertEjsToPdf = async (templatePath, data, outputPath) => {
+  try {
+    // This is a placeholder. In production, you'd use puppeteer or similar
+    console.log('PDF generation would happen here');
+    console.log('Template:', templatePath);
+    console.log('Output:', outputPath);
+    return outputPath;
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    throw error;
+  }
+};
+
 module.exports = {
-  sendDemoRequestEmail
+  sendDemoRequestEmail,
+  sendMultipleEmails,
+  generateQRCode,
+  convertEjsToPdf
 };

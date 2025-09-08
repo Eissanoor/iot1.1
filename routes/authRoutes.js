@@ -6,6 +6,7 @@ const { upload } = require('../utils/uploadUtils');
 
 // Auth routes
 router.post('/signup', authController.signup);
+router.post('/create-user', authController.createUser); // Comprehensive signup with subscription support
 router.post('/login', authController.login);
 router.post('/login/nfc', authController.loginWithNfc);
 router.get('/me', authMiddleware.verifyToken, authController.getMe);

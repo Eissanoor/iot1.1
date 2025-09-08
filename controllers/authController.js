@@ -1,11 +1,115 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const { getImageUrl } = require('../utils/uploadUtils');
+const { createError } = require('../utils/createError');
+const { sendMultipleEmails, generateQRCode, convertEjsToPdf } = require('../utils/emailUtils');
+const prisma = require('../prisma/client');
+const bcrypt = require('bcryptjs');
+const Joi = require('joi');
+const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs').promises;
+const fsSync = require('fs');
+const ejs = require('ejs');
 
 // JWT secret key - should be in environment variables in production
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:2507';
 
-// Signup controller
+// Validation schema for comprehensive signup
+const signupSchema = Joi.object({
+  email: Joi.string().email().required(),
+  username: Joi.string().min(3).max(50).required(),
+  password: Joi.string().min(6).optional(), // Made optional - will auto-generate if not provided
+  firstName: Joi.string().max(100).optional(),
+  lastName: Joi.string().max(100).optional(),
+  phoneNo: Joi.string().max(20).optional(),
+  cr_number: Joi.string().max(100).optional(),
+  tin_number: Joi.string().max(100).optional(),
+  company_name_eng: Joi.string().max(500).optional(),
+  company_name_arabic: Joi.string().max(500).optional(),
+  company_landline: Joi.string().max(500).optional(),
+  business_type: Joi.string().valid('organization', 'individual', 'family business').optional(),
+  zip_code: Joi.string().max(50).optional(),
+  industry_types: Joi.array().items(Joi.string()).optional(),
+  country: Joi.string().max(100).optional(),
+  state: Joi.string().max(100).optional(),
+  city: Joi.string().max(100).optional(),
+  membership_category: Joi.string().max(50).optional(),
+  user_source: Joi.string().max(20).default('fatsAi'),
+  plan_id: Joi.string().optional(),
+  payment_method: Joi.string().optional(),
+  notes: Joi.string().optional(),
+  subscription_type: Joi.string().valid('free', 'paid').default('free'),
+  isNfcEnable: Joi.boolean().default(false),
+  nfcNumber: Joi.string().optional().allow(null),
+  dateOfBirth: Joi.date().optional(),
+  gender: Joi.string().valid('male', 'female', 'other').optional(),
+  displayName: Joi.string().max(100).optional(),
+  bio: Joi.string().optional(),
+  language: Joi.string().max(10).optional(),
+  emailNotification: Joi.boolean().default(true),
+  smsAlert: Joi.boolean().default(false),
+  pushNotification: Joi.boolean().default(true),
+  buildingNumber: Joi.string().max(50).optional(),
+  companySize: Joi.string().max(50).optional(),
+  website: Joi.string().optional(),
+  bAddress: Joi.string().optional(),
+  bBuildingNumber: Joi.string().max(50).optional(),
+  bCountry: Joi.string().max(100).optional(),
+  bState: Joi.string().max(100).optional(),
+  bCity: Joi.string().max(100).optional(),
+  bZipCode: Joi.string().max(50).optional(),
+  vatNumber: Joi.string().max(100).optional(),
+  commercialRegistration: Joi.string().max(100).optional(),
+  gps_location: Joi.string().optional(),
+  latitude: Joi.string().optional(),
+  longitude: Joi.string().optional()
+});
+
+// Helper functions
+const generateStrongPassword = (length = 8) => {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+};
+
+const hashPassword = (password) => {
+  return bcrypt.hashSync(password, 10);
+};
+
+const generateRandomTransactionId = (length = 10) => {
+  return crypto.randomBytes(length).toString('hex').toUpperCase();
+};
+
+const COMPANY_DETAILS = {
+  title: "IoT Solutions Company",
+  account_no: "IOT123456789",
+  iban_no: "SA10 4500 0000 1234 5678 9012",
+  bank_name: "Sample Bank",
+  bank_swift_code: "SAMPBANK",
+  bank_address: 'Sample Address, Sample City',
+  phone: "9200-12345",
+  email: "info@iotsolutions.com",
+  crNumber: "1234567890",
+  tinNumber: "123456789012345",
+  website: "iotsolutions.com",
+  CompanyURLS: {
+    about: `${BACKEND_URL}/about`,
+    services: `${BACKEND_URL}/services`,
+    pricing: `${BACKEND_URL}/pricing`,
+    support: `${BACKEND_URL}/support`,
+    contact: `${BACKEND_URL}/contact`,
+    privacy: `${BACKEND_URL}/privacy`,
+    terms: `${BACKEND_URL}/terms`,
+    help: `${BACKEND_URL}/help`
+  }
+};
+
+// Simple Signup controller (original)
 exports.signup = async (req, res) => {
   try {
     const { email, username, password, isNfcEnable, nfcNumber } = req.body;
@@ -75,6 +179,281 @@ exports.signup = async (req, res) => {
   } catch (error) {
     console.error('Error during signup:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Comprehensive Signup controller with subscription and email functionality
+exports.createUser = async (req, res, next) => {
+  try {
+    const { error, value } = signupSchema.validate(req.body);
+    if (error) throw createError(400, error.details[0].message);
+
+    const { plan_id, payment_method, notes, subscription_type, industry_types, ...userData } = value;
+
+    // Handle industry_types conversion to JSON string
+    if (industry_types) {
+      userData.industry_types = JSON.stringify(industry_types);
+    }
+
+    // Check for existing user with email, username, cr_number, or tin_number
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: userData.email },
+          { username: userData.username },
+          ...(userData.cr_number ? [{ cr_number: userData.cr_number }] : []),
+          ...(userData.tin_number ? [{ tin_number: userData.tin_number }] : []),
+        ],
+      },
+    });
+
+    if (existingUser) {
+      const errorMessages = [];
+
+      // Check each field and provide specific error messages
+      if (existingUser.email === userData.email) {
+        errorMessages.push('Email already exists');
+      }
+      if (existingUser.username === userData.username) {
+        errorMessages.push('Username already exists');
+      }
+      if (userData.cr_number && existingUser.cr_number === userData.cr_number) {
+        errorMessages.push('CR number already exists');
+      }
+      if (userData.tin_number && existingUser.tin_number === userData.tin_number) {
+        errorMessages.push('TIN number already exists');
+      }
+
+      // Throw an error with the detailed conflict messages
+      throw createError(409, errorMessages.join(', '));
+    }
+
+    // Check if NFC number is already in use (if provided and NFC is enabled)
+    if (userData.nfcNumber && userData.isNfcEnable) {
+      const existingNfc = await prisma.user.findFirst({
+        where: { 
+          nfcNumber: userData.nfcNumber,
+          isNfcEnable: true
+        }
+      });
+      if (existingNfc) {
+        throw createError(409, 'NFC number already in use');
+      }
+    }
+
+    // Generate password and store both plain and hashed versions
+    const plainPassword = userData.password || generateStrongPassword(8);
+    userData.password = hashPassword(plainPassword);
+
+    // Set company name from firstName + lastName if not provided
+    if (!userData.company_name_eng && userData.firstName && userData.lastName) {
+      userData.company_name_eng = `${userData.firstName} ${userData.lastName}`;
+    }
+
+    const currentDate = new Date();
+    const expiryDate = new Date(currentDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+    // Generate transaction ID for subscription (not stored in user table)
+    const transactionId = generateRandomTransactionId(10);
+
+    // Handle subscription plan if provided
+    let subscriptionPlan = null;
+    let isFreeplan = subscription_type === 'free';
+
+    if (plan_id) {
+      subscriptionPlan = await prisma.subscriptionPlan.findFirst({
+        where: { id: plan_id, isActive: true },
+        include: {
+          plan_services: {
+            where: { isIncluded: true },
+            include: {
+              service: {
+                select: {
+                  id: true,
+                  name: true,
+                  display_name: true,
+                  description: true,
+                  service_type: true,
+                  icon: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!subscriptionPlan) {
+        throw createError(400, 'Invalid or inactive subscription plan');
+      }
+
+      // Determine if it's a free plan based on subscription_type OR price
+      isFreeplan = subscription_type === 'free' || Number(subscriptionPlan.price) === 0;
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: userData,
+      });
+
+      let userSubscription = null;
+      if (subscriptionPlan) {
+        userSubscription = await tx.userSubscription.create({
+          data: {
+            userId: newUser.id,
+            planId: plan_id,
+            status: 'active',
+            startedAt: currentDate,
+            expiresAt: expiryDate,
+            paymentStatus: isFreeplan ? 'paid' : 'pending',
+            amountPaid: isFreeplan ? 0 : subscriptionPlan.price,
+            paymentMethod: isFreeplan ? 'free' : payment_method,
+            transactionId: transactionId,
+            notes: notes || null,
+          },
+        });
+      }
+
+      return { user: newUser, subscription: userSubscription };
+    });
+
+    let pdfFilePath = null;
+    let pdfFilename = null;
+
+    // Only generate invoice for paid subscriptions
+    if (!isFreeplan && subscriptionPlan) {
+      // Properly structure the invoice data with services
+      const invoiceData = {
+        user: result.user,
+        subscription: {
+          ...result.subscription,
+          plan: subscriptionPlan,
+          services: subscriptionPlan.plan_services.map(planService => planService.service),
+        },
+        company_details: COMPANY_DETAILS,
+        qrCodeDataURL: await generateQRCode(transactionId),
+        BACKEND_URL: BACKEND_URL,
+        topHeading: 'Invoice'
+      };
+
+      // Generate PDF Invoice
+      const pdfDir = path.join(__dirname, '../../public/uploads/documents/MemberRegInvoice');
+      if (!fsSync.existsSync(pdfDir)) fsSync.mkdirSync(pdfDir, { recursive: true });
+
+      pdfFilename = `Invoice-${result.user.company_name_eng?.replace(/[^a-zA-Z0-9]/g, '_') || 'User'}-${transactionId}-${Date.now()}.pdf`;
+      pdfFilePath = path.join(pdfDir, pdfFilename);
+
+      const pdfDirectory = path.join(
+        __dirname,
+        "..",
+        "views",
+        "pdf",
+        "Invoice",
+        "printpackInvoice.ejs"
+      );
+
+      await convertEjsToPdf(pdfDirectory, invoiceData, pdfFilePath);
+
+      await prisma.memberDocument.create({
+        data: {
+          documentPath: `/uploads/documents/MemberRegInvoice/${pdfFilename}`,
+          transactionId: transactionId,
+          userId: result.user.id,
+          docType: 'invoice',
+          status: 'inactive',
+        },
+      });
+    }
+
+    // Prepare simplified email template data
+    const emailTemplateData = {
+      user: result.user,
+      subscription: result.subscription ? {
+        ...result.subscription,
+        plan: subscriptionPlan,
+        services: subscriptionPlan?.plan_services?.map(planService => planService.service) || [],
+      } : null,
+      company_details: COMPANY_DETAILS,
+      BACKEND_URL: BACKEND_URL,
+      generatedPassword: plainPassword,
+      isFreeplan: isFreeplan,
+      subscription_type: subscription_type,
+    };
+
+    // Path to the simple email template
+    const emailTemplatePath = path.join(
+      __dirname,
+      "..",
+      "views",
+      "emails",
+      "registration",
+      "welcomeEmail.ejs"
+    );
+
+    // Generate HTML content from EJS template
+    const htmlContent = await ejs.renderFile(emailTemplatePath, emailTemplateData);
+
+    // Prepare email subject
+    const emailSubject = isFreeplan
+      ? `Welcome to IoT Solutions - Your Free Account is Active!`
+      : `Welcome to IoT Solutions - Registration Confirmation`;
+
+    // Prepare email attachments
+    const emailAttachments = [];
+    if (!isFreeplan && pdfFilePath) {
+      emailAttachments.push({
+        filename: pdfFilename,
+        content: await fs.readFile(pdfFilePath),
+        contentType: 'application/pdf',
+      });
+    }
+
+    // Send email with credentials and invoice
+    await sendMultipleEmails({
+      emailData: [
+        {
+          toEmail: result.user.email,
+          subject: emailSubject,
+          htmlContent: htmlContent,
+          attachments: emailAttachments,
+        },
+      ],
+    });
+
+    // Create JWT token
+    const token = jwt.sign(
+      { userId: result.user.id, email: result.user.email },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: `User created successfully and ${isFreeplan ? 'welcome' : 'registration confirmation'} email sent`,
+      data: {
+        user_id: result.user.id,
+        transaction_id: transactionId,
+        plan_name: subscriptionPlan?.displayName || subscriptionPlan?.name || 'No Plan',
+        subscription_type: subscription_type,
+        is_free_plan: isFreeplan,
+        email_sent: true,
+        invoice_generated: !isFreeplan,
+      },
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        username: result.user.username,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        company_name_eng: result.user.company_name_eng,
+        isNfcEnable: result.user.isNfcEnable,
+        nfcNumber: result.user.nfcNumber
+      },
+      token
+    });
+  } catch (error) {
+    console.error('Create User Error:', error);
+    return next(error);
   }
 };
 

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to IoT Solutions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .credentials-box {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .credentials-box h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .credential-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .credential-item strong {
+            color: #495057;
+        }
+        .credential-item .value {
+            color: #007bff;
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .company-info {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-free {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-paid {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to IoT Solutions!</h1>
+            <p>Your account has been created successfully</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello <%= user.firstName || user.username %>!</h2>
+            
+            <p>Thank you for joining IoT Solutions. Your account has been set up and is ready to use.</p>
+            
+            <div class="credentials-box">
+                <h3>🔐 Your Login Credentials</h3>
+                <div class="credential-item">
+                    <strong>Email:</strong>
+                    <div class="value"><%= user.email %></div>
+                </div>
+                <div class="credential-item">
+                    <strong>Username:</strong>
+                    <div class="value"><%= user.username %></div>
+                </div>
+                <div class="credential-item">
+                    <strong>Password:</strong>
+                    <div class="value"><%= generatedPassword %></div>
+                </div>
+                <p style="color: #dc3545; font-size: 14px; margin-top: 15px;">
+                    ⚠️ Please change your password after your first login for security.
+                </p>
+            </div>
+
+            <% if (subscription && subscription.plan) { %>
+            <div class="company-info">
+                <h3>📋 Subscription Details</h3>
+                <p><strong>Plan:</strong> <%= subscription.plan.display_name || subscription.plan.name %></p>
+                <p><strong>Status:</strong> 
+                    <span class="status-badge <%= isFreeplan ? 'status-free' : 'status-paid' %>">
+                        <%= isFreeplan ? 'Active (Free)' : 'Pending Payment' %>
+                    </span>
+                </p>
+                <% if (subscription.plan.price > 0) { %>
+                <p><strong>Amount:</strong> SAR <%= parseFloat(subscription.plan.price).toFixed(2) %></p>
+                <% } %>
+            </div>
+            <% } %>
+
+            <% if (user.company_name_eng) { %>
+            <div class="company-info">
+                <h3>🏢 Company Information</h3>
+                <p><strong>Company:</strong> <%= user.company_name_eng %></p>
+                <% if (user.cr_number) { %>
+                <p><strong>CR Number:</strong> <%= user.cr_number %></p>
+                <% } %>
+                <% if (user.tin_number) { %>
+                <p><strong>TIN Number:</strong> <%= user.tin_number %></p>
+                <% } %>
+            </div>
+            <% } %>
+
+            <div style="text-align: center;">
+                <a href="https://ai.fatsme.online/login" class="btn">Login to Your Account</a>
+            </div>
+
+            <% if (!isFreeplan && subscription && subscription.plan.price > 0) { %>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4 style="color: #856404; margin-top: 0;">💳 Payment Required</h4>
+                <p style="color: #856404;">
+                    To activate your premium features, please complete the payment process. 
+                    An invoice has been attached to this email with payment details.
+                </p>
+            </div>
+            <% } %>
+
+            <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4 style="color: #0c5460; margin-top: 0;">🚀 Next Steps</h4>
+                <ul style="color: #0c5460;">
+                    <li>Login using your credentials above</li>
+                    <li>Complete your profile information</li>
+                    <li>Explore our IoT solutions and services</li>
+                    <% if (!isFreeplan) { %>
+                    <li>Complete payment to unlock premium features</li>
+                    <% } %>
+                </ul>
+            </div>
+
+            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+            
+            <p>Best regards,<br>
+            The IoT Solutions Team</p>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= company_details.title %></strong></p>
+            <p>Email: <%= company_details.email %> | Website: <%= company_details.website %></p>
+            <p>&copy; <%= new Date().getFullYear() %> IoT Solutions. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
