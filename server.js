@@ -45,6 +45,7 @@ const languagesRoutes = require('./routes/languagesRoutes');
 const gasDetectionRoutes = require('./routes/gasDetectionRoutes');
 const carDetectionRoutes = require('./routes/carDetectionRoutes');
 const rainStatusRoutes = require('./routes/rainStatusRoutes');
+const faqRoutes = require('./routes/faqRoutes');
 
 // Initialize Express app
 const app = express();
@@ -133,6 +134,7 @@ async function startServer() {
     app.use('/api/gas-detection', gasDetectionRoutes);
     app.use('/api/car-detection', carDetectionRoutes);
     app.use('/api/rain-status', rainStatusRoutes);
+    app.use('/api/faqs', faqRoutes);
 
     // Start the server
     app.listen(PORT, () => {
