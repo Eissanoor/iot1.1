@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
 
@@ -50,6 +51,21 @@ const app = express();
 
 // Set port
 const PORT = process.env.PORT || 2507;
+
+// Enable gzip compression for all responses
+app.use(compression({
+  // Compress responses with these MIME types
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  // Compression level (1-9, 6 is default)
+  level: 6,
+  // Only compress responses larger than this threshold (in bytes)
+  threshold: 1024
+}));
 
 // Middleware
 app.use(bodyParser.json());
