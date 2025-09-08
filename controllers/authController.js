@@ -346,7 +346,7 @@ exports.createUser = async (req, res, next) => {
       };
 
       // Generate PDF Invoice
-      const pdfDir = path.join(__dirname, '../../public/uploads/documents/MemberRegInvoice');
+      const pdfDir = path.join(__dirname, '../uploads/documents/MemberRegInvoice');
       if (!fsSync.existsSync(pdfDir)) fsSync.mkdirSync(pdfDir, { recursive: true });
 
       pdfFilename = `Invoice-${result.user.company_name_eng?.replace(/[^a-zA-Z0-9]/g, '_') || 'User'}-${transactionId}-${Date.now()}.pdf`;
