@@ -263,32 +263,55 @@ const sendDemoRequestEmail = async (data) => {
   }
 };
 
-// Send multiple emails utility
+// Send multiple emails utility with retry logic
 const sendMultipleEmails = async (emailData) => {
-  try {
-    const transporter = createTransporter();
-    const results = [];
-
-    for (const email of emailData.emailData) {
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || '"IoT Solutions" <noreply@iotsolutions.com>',
-        to: email.toEmail,
-        subject: email.subject,
-        html: email.htmlContent,
-        attachments: email.attachments || []
-      };
-
-      console.log('Sending email to:', mailOptions.to);
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const transporter = createTransporter();
       
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', info.messageId);
-      results.push(info);
-    }
+      // Test connection first
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+      
+      const results = [];
 
-    return results;
-  } catch (error) {
-    console.error('Failed to send emails:', error);
-    throw error;
+      for (const email of emailData.emailData) {
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || '"IoT Solutions" <noreply@iotsolutions.com>',
+          to: email.toEmail,
+          subject: email.subject,
+          html: email.htmlContent,
+          attachments: email.attachments || []
+        };
+
+        console.log('Sending email to:', mailOptions.to);
+        
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.messageId);
+        results.push(info);
+      }
+
+      return results;
+    } catch (error) {
+      console.error(`Email sending attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        console.error('All email sending attempts failed. Continuing without email...');
+        // Don't throw error - allow user creation to continue
+        return { 
+          error: 'Email sending failed after all retries', 
+          details: error.message,
+          emailSkipped: true 
+        };
+      }
+      
+      // Wait before retry
+      console.log(`Retrying in ${retryDelay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
 };
 
@@ -303,17 +326,72 @@ const generateQRCode = async (data) => {
   }
 };
 
-// Convert EJS to PDF utility (placeholder)
+// Convert EJS template to PDF using Puppeteer
 const convertEjsToPdf = async (templatePath, data, outputPath) => {
+  const ejs = require('ejs');
+  const puppeteer = require('puppeteer');
+  const fs = require('fs').promises;
+  const path = require('path');
+
+  let browser = null;
+  let page = null;
+
   try {
-    // This is a placeholder. In production, you'd use puppeteer or similar
-    console.log('PDF generation would happen here');
+    console.log('PDF generation starting...');
     console.log('Template:', templatePath);
     console.log('Output:', outputPath);
+
+    // Render EJS template to HTML
+    const htmlContent = await ejs.renderFile(templatePath, data);
+
+    // Launch browser with minimal options
+    const launchOptions = {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    };
+
+    try {
+      browser = await puppeteer.launch(launchOptions);
+    } catch (error) {
+      // Fallback to system Chrome
+      browser = await puppeteer.launch({
+        ...launchOptions,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+      });
+    }
+
+    // Create new page
+    page = await browser.newPage();
+    
+    // Set content
+    await page.setContent(htmlContent);
+    
+    // Ensure output directory exists
+    const outputDir = path.dirname(outputPath);
+    await fs.mkdir(outputDir, { recursive: true });
+
+    // Generate PDF
+    await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+    });
+
+    console.log('PDF generated successfully:', outputPath);
     return outputPath;
+
   } catch (error) {
     console.error('PDF generation failed:', error);
     throw error;
+  } finally {
+    // Cleanup resources
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
   }
 };
 

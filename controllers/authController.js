@@ -257,39 +257,45 @@ exports.createUser = async (req, res, next) => {
     // Generate transaction ID for subscription (not stored in user table)
     const transactionId = generateRandomTransactionId(10);
 
-    // Handle subscription plan if provided
+    // Handle subscription plan - plan_id is now required
+    if (!plan_id) {
+      throw createError(400, 'plan_id is required for all user registrations');
+    }
+
     let subscriptionPlan = null;
     let isFreeplan = subscription_type === 'free';
 
-    if (plan_id) {
-      subscriptionPlan = await prisma.subscriptionPlan.findFirst({
-        where: { id: plan_id, isActive: true },
-        include: {
-          plan_services: {
-            where: { isIncluded: true },
-            include: {
-              service: {
-                select: {
-                  id: true,
-                  name: true,
-                  display_name: true,
-                  description: true,
-                  service_type: true,
-                  icon: true,
-                },
+    // Find the specified plan
+    subscriptionPlan = await prisma.subscriptionPlan.findFirst({
+      where: { id: plan_id, isActive: true },
+      include: {
+        plan_services: {
+          where: { isIncluded: true },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                display_name: true,
+                description: true,
+                service_type: true,
+                icon: true,
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (!subscriptionPlan) {
-        throw createError(400, 'Invalid or inactive subscription plan');
-      }
-
-      // Determine if it's a free plan based on subscription_type OR price
-      isFreeplan = subscription_type === 'free' || Number(subscriptionPlan.price) === 0;
+    if (!subscriptionPlan) {
+      throw createError(400, 'Invalid or inactive subscription plan');
     }
+
+    // Determine if it's a free plan based on subscription_type OR price
+    isFreeplan = subscription_type === 'free' || Number(subscriptionPlan.price) === 0;
+
+    // Calculate amount_paid automatically
+    const amount_paid = isFreeplan ? 0 : Number(subscriptionPlan.price);
 
     const result = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
@@ -306,7 +312,7 @@ exports.createUser = async (req, res, next) => {
             startedAt: currentDate,
             expiresAt: expiryDate,
             paymentStatus: isFreeplan ? 'paid' : 'pending',
-            amountPaid: isFreeplan ? 0 : subscriptionPlan.price,
+            amountPaid: amount_paid,
             paymentMethod: isFreeplan ? 'free' : payment_method,
             transactionId: transactionId,
             notes: notes || null,
@@ -315,10 +321,13 @@ exports.createUser = async (req, res, next) => {
       }
 
       return { user: newUser, subscription: userSubscription };
+    }, {
+      timeout: 30000, // Increase timeout to 30 seconds
     });
 
     let pdfFilePath = null;
     let pdfFilename = null;
+    let pdfGenerationResult = { success: true, error: null, message: 'PDF not required for free plan' };
 
     // Only generate invoice for paid subscriptions
     if (!isFreeplan && subscriptionPlan) {
@@ -352,17 +361,40 @@ exports.createUser = async (req, res, next) => {
         "printpackInvoice.ejs"
       );
 
-      await convertEjsToPdf(pdfDirectory, invoiceData, pdfFilePath);
+      pdfGenerationResult = { success: false, error: null };
+      try {
+        await convertEjsToPdf(pdfDirectory, invoiceData, pdfFilePath);
+        
+        // Verify PDF was created successfully
+        if (!fsSync.existsSync(pdfFilePath)) {
+          throw new Error(`PDF generation failed - file not created at ${pdfFilePath}`);
+        }
 
-      await prisma.memberDocument.create({
-        data: {
-          documentPath: `/uploads/documents/MemberRegInvoice/${pdfFilename}`,
-          transactionId: transactionId,
-          userId: result.user.id,
-          docType: 'invoice',
-          status: 'inactive',
-        },
-      });
+        // Create document record outside of transaction
+        await prisma.memberDocument.create({
+          data: {
+            documentPath: `/uploads/documents/MemberRegInvoice/${pdfFilename}`,
+            transactionId: transactionId,
+            userId: result.user.id,
+            docType: 'invoice',
+            status: 'inactive',
+          },
+        });
+        
+        pdfGenerationResult = { success: true, error: null };
+      } catch (pdfError) {
+        pdfGenerationResult = {
+          success: false,
+          error: {
+            message: 'PDF generation failed',
+            details: pdfError.message,
+            type: 'PDF_GENERATION_ERROR'
+          }
+        };
+        // Set pdfFilePath to null so email won't try to attach non-existent file
+        pdfFilePath = null;
+        pdfFilename = null;
+      }
     }
 
     // Prepare simplified email template data
@@ -409,16 +441,41 @@ exports.createUser = async (req, res, next) => {
     }
 
     // Send email with credentials and invoice
-    await sendMultipleEmails({
-      emailData: [
-        {
-          toEmail: result.user.email,
-          subject: emailSubject,
-          htmlContent: htmlContent,
-          attachments: emailAttachments,
-        },
-      ],
-    });
+    let emailResult = { success: false, error: null };
+    try {
+      const emailResponse = await sendMultipleEmails({
+        emailData: [
+          {
+            toEmail: result.user.email,
+            subject: emailSubject,
+            htmlContent: htmlContent,
+            attachments: emailAttachments,
+          },
+        ],
+      });
+      
+      if (emailResponse && !emailResponse.emailSkipped) {
+        emailResult = { success: true, error: null };
+      } else {
+        emailResult = {
+          success: false,
+          error: {
+            message: 'Email sending failed',
+            details: emailResponse?.details || emailResponse?.error || 'Unknown email error',
+            type: 'EMAIL_SENDING_ERROR'
+          }
+        };
+      }
+    } catch (error) {
+      emailResult = {
+        success: false,
+        error: {
+          message: 'Email sending failed',
+          details: error.message,
+          type: 'EMAIL_SENDING_ERROR'
+        }
+      };
+    }
 
     // Create JWT token
     const token = jwt.sign(
@@ -429,15 +486,16 @@ exports.createUser = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: `User created successfully and ${isFreeplan ? 'welcome' : 'registration confirmation'} email sent`,
+      message: 'User created successfully',
       data: {
         user_id: result.user.id,
         transaction_id: transactionId,
         plan_name: subscriptionPlan?.displayName || subscriptionPlan?.name || 'No Plan',
         subscription_type: subscription_type,
         is_free_plan: isFreeplan,
-        email_sent: true,
-        invoice_generated: !isFreeplan,
+        pdf_generation: !isFreeplan ? pdfGenerationResult : { success: true, error: null, message: 'PDF not required for free plan' },
+        email_sending: emailResult,
+        invoice_generated: !isFreeplan && pdfGenerationResult.success,
       },
       user: {
         id: result.user.id,
@@ -453,7 +511,18 @@ exports.createUser = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Create User Error:', error);
-    return next(error);
+    
+    // Return structured JSON error response
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: 'User creation failed',
+      error: {
+        message: error.message || 'Internal server error',
+        type: error.name || 'UNKNOWN_ERROR',
+        code: error.code || null,
+        details: error.details || null
+      }
+    });
   }
 };
 
