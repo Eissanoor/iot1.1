@@ -13,7 +13,7 @@ exports.createFAQ = async (req, res) => {
     }
     
     // Create new FAQ
-    const faq = await prisma.faq.create({
+    const faq = await prisma.FAQ.create({
       data: {
         name,
         name_ar: name_ar || null,
@@ -58,7 +58,7 @@ exports.getAllFAQs = async (req, res) => {
     }
     
     // Get FAQs with pagination, sort by createdAt descending (newest first)
-    const faqs = await prisma.faq.findMany({
+    const faqs = await prisma.FAQ.findMany({
       where,
       skip: skip,
       take: limit,
@@ -66,7 +66,7 @@ exports.getAllFAQs = async (req, res) => {
     });
     
     // Get total count
-    const totalItems = await prisma.faq.count({ where });
+    const totalItems = await prisma.FAQ.count({ where });
     const totalPages = Math.ceil(totalItems / limit);
     
     res.status(200).json({
@@ -91,7 +91,7 @@ exports.getFAQById = async (req, res) => {
     const { id } = req.params;
     
     // Find FAQ by ID
-    const faq = await prisma.faq.findUnique({
+    const faq = await prisma.FAQ.findUnique({
       where: { id: parseInt(id) }
     });
     
@@ -112,7 +112,7 @@ exports.updateFAQ = async (req, res) => {
     const { name, name_ar, content, content_ar } = req.body;
     
     // Check if FAQ exists
-    const existingFAQ = await prisma.faq.findUnique({
+    const existingFAQ = await prisma.FAQ.findUnique({
       where: { id: parseInt(id) }
     });
     
@@ -121,7 +121,7 @@ exports.updateFAQ = async (req, res) => {
     }
     
     // Update FAQ
-    const updatedFAQ = await prisma.faq.update({
+    const updatedFAQ = await prisma.FAQ.update({
       where: { id: parseInt(id) },
       data: {
         name: name !== undefined ? name : existingFAQ.name,
@@ -152,7 +152,7 @@ exports.deleteFAQ = async (req, res) => {
     const { id } = req.params;
     
     // Check if FAQ exists
-    const existingFAQ = await prisma.faq.findUnique({
+    const existingFAQ = await prisma.FAQ.findUnique({
       where: { id: parseInt(id) }
     });
     
@@ -161,7 +161,7 @@ exports.deleteFAQ = async (req, res) => {
     }
     
     // Delete FAQ
-    await prisma.faq.delete({
+    await prisma.FAQ.delete({
       where: { id: parseInt(id) }
     });
     
@@ -176,10 +176,10 @@ exports.deleteFAQ = async (req, res) => {
 exports.getFAQStats = async (req, res) => {
   try {
     // Get total FAQ count
-    const totalFAQs = await prisma.faq.count();
+    const totalFAQs = await prisma.FAQ.count();
     
     // Get FAQs with Arabic content count
-    const faqsWithArabic = await prisma.faq.count({
+    const faqsWithArabic = await prisma.FAQ.count({
       where: {
         OR: [
           { name_ar: { not: null } },
