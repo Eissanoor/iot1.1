@@ -630,6 +630,7 @@ exports.getMe = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
+        // Include active subscription with plan and services
         user_subscriptions: {
           where: { status: "active" },
           include: {
@@ -653,10 +654,10 @@ exports.getMe = async (req, res) => {
       });
     }
 
-    // Process subscription data to make it more readable
+    // Process subscription and documents data to make it more readable
     const userResponse = { ...user };
     
-    // If user has active subscription, format the plan and services
+    // Format subscription data if available
     if (user.user_subscriptions && user.user_subscriptions.length > 0) {
       const subscription = user.user_subscriptions[0];
       userResponse.subscription = {
@@ -692,7 +693,31 @@ exports.getMe = async (req, res) => {
       userResponse.subscription = null;
     }
     
-    // Return user info with subscription data
+    // Get documents directly using the user_id field
+    const documents = await prisma.memberDocument.findMany({
+      where: {
+        userId: userId,
+        // status: "active",
+        deletedAt: null
+      }
+    });
+    
+    // Format documents data
+    if (documents && documents.length > 0) {
+      userResponse.documents = documents.map(doc => ({
+        id: doc.id,
+        documentPath: doc.documentPath,
+        transactionId: doc.transactionId,
+        docType: doc.docType,
+        status: doc.status,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt
+      }));
+    } else {
+      userResponse.documents = [];
+    }
+    
+    // Return user info with subscription and documents data
     res.status(200).json({
       user: userResponse
     });
