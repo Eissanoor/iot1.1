@@ -626,17 +626,75 @@ exports.getMe = async (req, res) => {
     // The user ID comes from the authenticated request
     const userId = req.user.userId;
     
-    // Find user by ID
-    const user = await User.findById(userId);
+    // Find user by ID with subscription information
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        user_subscriptions: {
+          where: { status: "active" },
+          include: {
+            plan: {
+              include: {
+                plan_services: {
+                  include: {
+                    service: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
     if (!user) {
       return res.status(404).json({ 
         error: 'User not found' 
       });
     }
+
+    // Process subscription data to make it more readable
+    const userResponse = { ...user };
     
-    // Return user info (excluding password)
+    // If user has active subscription, format the plan and services
+    if (user.user_subscriptions && user.user_subscriptions.length > 0) {
+      const subscription = user.user_subscriptions[0];
+      userResponse.subscription = {
+        plan: {
+          id: subscription.plan.id,
+          name: subscription.plan.name,
+          displayName: subscription.plan.displayName,
+          description: subscription.plan.description,
+          price: subscription.plan.price,
+          billingCycle: subscription.plan.billingCycle,
+          isPopular: subscription.plan.isPopular
+        },
+        services: subscription.plan.plan_services
+          .filter(ps => ps.isIncluded)
+          .map(ps => ({
+            id: ps.service.id,
+            name: ps.service.name,
+            displayName: ps.service.display_name,
+            description: ps.service.description,
+            serviceType: ps.service.service_type,
+            icon: ps.service.icon,
+            isActive: ps.service.is_active
+          })),
+        status: subscription.status,
+        startedAt: subscription.startedAt,
+        expiresAt: subscription.expiresAt,
+        paymentStatus: subscription.paymentStatus
+      };
+      
+      // Remove the nested structure to clean up response
+      delete userResponse.user_subscriptions;
+    } else {
+      userResponse.subscription = null;
+    }
+    
+    // Return user info with subscription data
     res.status(200).json({
-      user:user
+      user: userResponse
     });
   } catch (error) {
     console.error('Error getting user info:', error);
