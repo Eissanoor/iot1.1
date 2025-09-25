@@ -31,6 +31,27 @@ const getIoTSensorData = async () => {
       }
     });
 
+    // Get latest vibration detection reading
+    const latestVibration = await prisma.vibrationDetection.findFirst({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Get latest ultrasonic reading from carDetection (distance)
+    const latestUltrasonic = await prisma.carDetection.findFirst({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Get latest motion detection reading
+    const latestMotion = await prisma.motionDetection.findFirst({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
     // Get the latest rain status reading
     const latestRainStatus = await prisma.rainStatus.findFirst({
       orderBy: {
@@ -89,6 +110,54 @@ const getIoTSensorData = async () => {
       }
     });
 
+    // Get historical vibration data for the graph (last 24 hours)
+    const vibrationHistory = await prisma.vibrationDetection.findMany({
+      where: {
+        createdAt: {
+          gte: oneDayAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        status: true,
+        createdAt: true
+      }
+    });
+
+    // Get historical ultrasonic data for the graph (last 24 hours) from carDetection
+    const ultrasonicHistory = await prisma.carDetection.findMany({
+      where: {
+        createdAt: {
+          gte: oneDayAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        distance: true,
+        createdAt: true
+      }
+    });
+
+    // Get historical motion data for the graph (last 24 hours)
+    const motionHistory = await prisma.motionDetection.findMany({
+      where: {
+        createdAt: {
+          gte: oneDayAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        status: true,
+        createdAt: true
+      }
+    });
+
     // Prepare the response data
     return {
       temperature: {
@@ -109,6 +178,29 @@ const getIoTSensorData = async () => {
       },
       gasLeak: {
         status: latestGasDetection ? (latestGasDetection.status < 400 ? "Normal" : "Alert") : "N/A"
+      },
+      vibration: {
+        current: latestVibration ? (isNaN(Number(latestVibration.status)) ? latestVibration.status : Number(latestVibration.status)) : "N/A",
+        unit: latestVibration && !isNaN(Number(latestVibration.status)) ? "m/s²" : undefined,
+        history: vibrationHistory.map(item => ({
+          value: isNaN(Number(item.status)) ? item.status : Number(item.status),
+          timestamp: item.createdAt
+        }))
+      },
+      ultrasonic: {
+        current: typeof latestUltrasonic?.distance === 'number' ? Number(latestUltrasonic.distance.toFixed(2)) : (latestUltrasonic ? latestUltrasonic.distance : "N/A"),
+        unit: typeof latestUltrasonic?.distance === 'number' ? "m" : undefined,
+        history: ultrasonicHistory.map(item => ({
+          value: item.distance,
+          timestamp: item.createdAt
+        }))
+      },
+      motion: {
+        status: latestMotion ? latestMotion.status : "N/A",
+        history: motionHistory.map(item => ({
+          value: item.status,
+          timestamp: item.createdAt
+        }))
       },
       soilMoisture: {
         current: latestSoilMoisture ? Math.round(latestSoilMoisture.moisture) : "N/A",
