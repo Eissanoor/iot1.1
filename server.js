@@ -48,6 +48,8 @@ const rainStatusRoutes = require('./routes/rainStatusRoutes');
 const faqRoutes = require('./routes/faqRoutes');
 const motionDetectionRoutes = require('./routes/motionDetectionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const assetTypeRoutes = require('./routes/assetTypeRoutes');
+const iotDeviceAssetRoutes = require('./routes/iotDeviceAssetRoutes');
 
 // Initialize Express app
 const app = express();
@@ -139,6 +141,8 @@ async function startServer() {
     app.use('/api/faqs', faqRoutes);
     app.use('/api/motion-detection', motionDetectionRoutes);
     app.use('/api/dashboard', dashboardRoutes);
+    app.use('/api/asset-types', assetTypeRoutes);
+    app.use('/api/iot-device-assets', iotDeviceAssetRoutes);
 
     // Start the server
     app.listen(PORT, () => {
