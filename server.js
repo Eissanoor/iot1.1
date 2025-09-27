@@ -50,6 +50,9 @@ const motionDetectionRoutes = require('./routes/motionDetectionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const assetTypeRoutes = require('./routes/assetTypeRoutes');
 const iotDeviceAssetRoutes = require('./routes/iotDeviceAssetRoutes');
+const transferAssetRoutes = require('./routes/transferAssetRoutes');
+const technicianRoutes = require('./routes/technicianRoutes');
+const maintenanceRoutes = require('./routes/maintenanceRoutes');
 
 // Initialize Express app
 const app = express();
@@ -143,6 +146,9 @@ async function startServer() {
     app.use('/api/dashboard', dashboardRoutes);
     app.use('/api/asset-types', assetTypeRoutes);
     app.use('/api/iot-device-assets', iotDeviceAssetRoutes);
+    app.use('/api/transfer-assets', transferAssetRoutes);
+    app.use('/api/technicians', technicianRoutes);
+    app.use('/api/maintenances', maintenanceRoutes);
 
     // Start the server
     app.listen(PORT, () => {

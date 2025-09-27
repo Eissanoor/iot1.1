@@ -132,6 +132,9 @@ model EmployeeList {
   jobType      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  // Relations
+  transferAssets TransferAsset[] // One-to-many relationship with TransferAsset
 }
 
 // Asset model
@@ -625,4 +628,50 @@ model IotDeviceAsset {
   
   assetTypeId   Int
   assetTypeRef  AssetType @relation(fields: [assetTypeId], references: [id], onDelete: Cascade)
+  
+  transferAssets TransferAsset[] // One-to-many relationship with TransferAsset
+  maintenances   Maintenance[] // One-to-many relationship with Maintenance
+}
+
+model TransferAsset {
+  id              Int      @id @default(autoincrement())
+  location        String
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  iotDeviceAssetId Int
+  iotDeviceAsset   IotDeviceAsset @relation(fields: [iotDeviceAssetId], references: [id], onDelete: Cascade)
+  
+  employeeId       Int
+  employee         EmployeeList @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Technician {
+  id        Int      @id @default(autoincrement())
+  name_en   String
+  name_ar   String
+  status    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  maintenances Maintenance[] // One-to-many relationship with Maintenance
+}
+
+model Maintenance {
+  id              Int      @id @default(autoincrement())
+  maintenanceType String
+  scheduleDate    DateTime
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  iotDeviceAssetId Int
+  iotDeviceAsset   IotDeviceAsset @relation(fields: [iotDeviceAssetId], references: [id], onDelete: Cascade)
+  
+  technicianId     Int
+  technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 }
