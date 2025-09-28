@@ -6,7 +6,14 @@ const getAllManageLocations = async (req, res) => {
   try {
     const manageLocations = await prisma.manageLocation.findMany({
       include: {
-        location: true
+        location: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
     
@@ -31,7 +38,14 @@ const getManageLocationById = async (req, res) => {
     const manageLocation = await prisma.manageLocation.findUnique({
       where: { id: parseInt(id) },
       include: {
-        location: true
+        location: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
 
@@ -86,10 +100,18 @@ const createManageLocation = async (req, res) => {
         locationName,
         address,
         locationTypeId: parseInt(locationTypeId),
-        capacity: parseInt(capacity)
+        capacity: parseInt(capacity),
+        userId: req.user.userId // Get user ID from JWT token
       },
       include: {
-        location: true
+        location: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
 
@@ -150,7 +172,14 @@ const updateManageLocation = async (req, res) => {
       where: { id: parseInt(id) },
       data: updateData,
       include: {
-        location: true
+        location: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
 
@@ -212,7 +241,14 @@ const getManageLocationsByLocationType = async (req, res) => {
     const manageLocations = await prisma.manageLocation.findMany({
       where: { locationTypeId: parseInt(locationTypeId) },
       include: {
-        location: true
+        location: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
 

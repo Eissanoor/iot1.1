@@ -49,7 +49,8 @@ exports.createMaintenance = async (req, res) => {
         maintenanceType,
         scheduleDate: parsedScheduleDate,
         technicianId: parseInt(technicianId),
-        note: note || null
+        note: note || null,
+        userId: req.user.userId // Get user ID from JWT token
       },
       include: {
         iotDeviceAsset: {
@@ -58,7 +59,14 @@ exports.createMaintenance = async (req, res) => {
             assetTypeRef: true
           }
         },
-        technician: true
+        technician: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
     
@@ -110,7 +118,14 @@ exports.getAllMaintenances = async (req, res) => {
             assetTypeRef: true
           }
         },
-        technician: true
+        technician: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
     
@@ -149,7 +164,14 @@ exports.getMaintenanceById = async (req, res) => {
             assetTypeRef: true
           }
         },
-        technician: true
+        technician: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true
+          }
+        }
       }
     });
     

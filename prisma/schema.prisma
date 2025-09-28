@@ -85,6 +85,8 @@ model User {
   user_subscriptions UserSubscription[]
   documents_owned    MemberDocument[]   @relation("DocumentOwner")
   documents_uploaded MemberDocument[]   @relation("UploadedByMember")
+  manageLocations    ManageLocation[]
+  maintenances       Maintenance[]
   
   @@map("users")
 }
@@ -675,6 +677,9 @@ model Maintenance {
   
   technicianId     Int
   technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ManageLocation model
@@ -689,4 +694,7 @@ model ManageLocation {
   // Relations
   locationTypeId Int
   location      Location @relation(fields: [locationTypeId], references: [id], onDelete: Cascade)
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
