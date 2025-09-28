@@ -54,6 +54,7 @@ const transferAssetRoutes = require('./routes/transferAssetRoutes');
 const technicianRoutes = require('./routes/technicianRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const manageLocationRoutes = require('./routes/manageLocationRoutes');
 
 // Initialize Express app
 const app = express();
@@ -151,6 +152,7 @@ async function startServer() {
     app.use('/api/technicians', technicianRoutes);
     app.use('/api/maintenances', maintenanceRoutes);
     app.use('/api/reports', reportRoutes);
+    app.use('/api/manage-locations', manageLocationRoutes);
 
     // Start the server
     app.listen(PORT, () => {

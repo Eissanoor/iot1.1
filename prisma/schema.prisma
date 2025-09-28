@@ -208,6 +208,7 @@ model Location {
   room         String
   locationCode String    @unique
   assets       Asset[]   // One-to-many relationship with Asset
+  manageLocations ManageLocation[] // One-to-many relationship with ManageLocation
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -674,4 +675,18 @@ model Maintenance {
   
   technicianId     Int
   technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+}
+
+// ManageLocation model
+model ManageLocation {
+  id           Int      @id @default(autoincrement())
+  locationName String
+  address      String
+  capacity     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  locationTypeId Int
+  location      Location @relation(fields: [locationTypeId], references: [id], onDelete: Cascade)
 }
