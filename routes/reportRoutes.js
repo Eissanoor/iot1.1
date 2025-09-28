@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
+const { body, query, validationResult } = require('express-validator');
 const reportController = require('../controllers/reportController');
 const { verifyToken } = require('../middleware/auth');
 
-// Validation rules for report generation
+// Validation rules for report generation (POST)
 const reportValidation = [
   body('reportType')
     .notEmpty()
@@ -24,8 +24,31 @@ const reportValidation = [
     .withMessage('Invalid format. Must be one of: JSON, PDF, Excel, CSV')
 ];
 
-// Route to generate report
+// Validation rules for report generation (GET)
+const reportQueryValidation = [
+  query('reportType')
+    .notEmpty()
+    .withMessage('Report type is required')
+    .isIn(['Asset Inventory', 'Asset Utilization', 'Maintenance History', 'Asset Location'])
+    .withMessage('Invalid report type. Must be one of: Asset Inventory, Asset Utilization, Maintenance History, Asset Location'),
+  
+  query('dateRange')
+    .notEmpty()
+    .withMessage('Date range is required')
+    .isIn(['today', 'thisWeek', 'thisMonth', 'thisQuarter', 'thisYear'])
+    .withMessage('Invalid date range. Must be one of: today, thisWeek, thisMonth, thisQuarter, thisYear'),
+  
+  query('format')
+    .optional()
+    .isIn(['JSON', 'PDF', 'Excel', 'CSV'])
+    .withMessage('Invalid format. Must be one of: JSON, PDF, Excel, CSV')
+];
+
+// Route to generate report (POST - original method)
 router.post('/generate', verifyToken, reportValidation, reportController.generateReport);
+
+// Route to generate report (GET - new method)
+router.get('/generate', reportQueryValidation, reportController.generateReport);
 
 // Route to get available report types
 router.get('/types', verifyToken, reportController.getReportTypes);

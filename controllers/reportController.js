@@ -498,7 +498,8 @@ exports.generateReport = async (req, res) => {
       });
     }
 
-    const { reportType, dateRange, format } = req.body;
+    // Support both POST (body) and GET (query) parameters
+    const { reportType, dateRange, format } = req.method === 'GET' ? req.query : req.body;
 
     let reportData;
 
