@@ -80,6 +80,12 @@ model User {
   bZipCode            String? @db.VarChar(50)
   vatNumber           String? @db.NVarChar(100)
   commercialRegistration String? @db.NVarChar(100)
+  
+  // Payment fields
+  cardNumber          String? @db.NVarChar(20)
+  cvc                 String? @db.NVarChar(4)
+  expireDate          String? @db.NVarChar(10)
+  paymentType         String? @default("bankTransfer") @db.NVarChar(20)
 
   // Relations
   user_subscriptions UserSubscription[]

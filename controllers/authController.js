@@ -64,7 +64,11 @@ const signupSchema = Joi.object({
   commercialRegistration: Joi.string().max(100).optional(),
   gps_location: Joi.string().optional(),
   latitude: Joi.string().optional(),
-  longitude: Joi.string().optional()
+  longitude: Joi.string().optional(),
+  cardNumber: Joi.string().max(20).optional(),
+  cvc: Joi.string().max(4).optional(),
+  expireDate: Joi.string().max(10).optional(),
+  paymentType: Joi.string().valid('bankTransfer', 'creditCard', 'debitCard', 'paypal').default('bankTransfer').optional()
 });
 
 // Helper functions
@@ -820,7 +824,11 @@ exports.updateProfile = async (req, res) => {
       bCity,
       bZipCode,
       vatNumber,
-      commercialRegistration
+      commercialRegistration,
+      cardNumber,
+      cvc,
+      expireDate,
+      paymentType
     } = req.body;
     
     // Handle uploaded image file - store full path
@@ -920,6 +928,10 @@ exports.updateProfile = async (req, res) => {
     if (bZipCode !== undefined) updateData.bZipCode = bZipCode;
     if (vatNumber !== undefined) updateData.vatNumber = vatNumber;
     if (commercialRegistration !== undefined) updateData.commercialRegistration = commercialRegistration;
+    if (cardNumber !== undefined) updateData.cardNumber = cardNumber;
+    if (cvc !== undefined) updateData.cvc = cvc;
+    if (expireDate !== undefined) updateData.expireDate = expireDate;
+    if (paymentType !== undefined) updateData.paymentType = paymentType;
     
     // Validate business_type if provided
     if (business_type && !['organization', 'individual', 'family business'].includes(business_type)) {
@@ -932,6 +944,13 @@ exports.updateProfile = async (req, res) => {
     if (gender && !['male', 'female', 'other'].includes(gender.toLowerCase())) {
       return res.status(400).json({
         error: 'Invalid gender. Must be one of: male, female, other'
+      });
+    }
+    
+    // Validate paymentType if provided
+    if (paymentType && !['bankTransfer', 'creditCard', 'debitCard', 'paypal'].includes(paymentType)) {
+      return res.status(400).json({
+        error: 'Invalid paymentType. Must be one of: bankTransfer, creditCard, debitCard, paypal'
       });
     }
     
@@ -1010,7 +1029,11 @@ exports.updateProfile = async (req, res) => {
         bCity: updatedUser.bCity,
         bZipCode: updatedUser.bZipCode,
         vatNumber: updatedUser.vatNumber,
-        commercialRegistration: updatedUser.commercialRegistration
+        commercialRegistration: updatedUser.commercialRegistration,
+        cardNumber: updatedUser.cardNumber,
+        cvc: updatedUser.cvc,
+        expireDate: updatedUser.expireDate,
+        paymentType: updatedUser.paymentType
       }
     });
   } catch (error) {
