@@ -555,6 +555,7 @@ model FourthContainer {
   status          Boolean  @default(true)
   url             String?
   points          String   // Stored as JSON string of array
+  points_ar       String   // Stored as JSON string of array for Arabic
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

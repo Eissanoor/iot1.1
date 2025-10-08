@@ -21,6 +21,7 @@ const getFourthContainerById = async (id) => {
   if (container) {
     // Parse points from JSON string to array
     container.points = JSON.parse(container.points || '[]');
+    container.points_ar = JSON.parse(container.points_ar || '[]');
   }
   
   return container;
@@ -30,6 +31,7 @@ const getFourthContainerById = async (id) => {
 const createFourthContainer = async (data) => {
   // Convert points array to JSON string
   const pointsString = JSON.stringify(data.points || []);
+  const pointsArString = JSON.stringify(data.points_ar || []);
   
   return await prisma.fourthContainer.create({
     data: {
@@ -41,6 +43,7 @@ const createFourthContainer = async (data) => {
       status: data.status !== undefined ? data.status : true,
       url: data.url,
       points: pointsString,
+      points_ar: pointsArString,
     },
   });
 };
@@ -63,6 +66,11 @@ const updateFourthContainer = async (id, data) => {
     updateData.points = JSON.stringify(data.points);
   }
   
+  // Only update points_ar if provided
+  if (data.points_ar) {
+    updateData.points_ar = JSON.stringify(data.points_ar);
+  }
+  
   const updated = await prisma.fourthContainer.update({
     where: {
       id: parseInt(id),
@@ -73,6 +81,7 @@ const updateFourthContainer = async (id, data) => {
   // Parse points from JSON string to array for the response
   if (updated) {
     updated.points = JSON.parse(updated.points || '[]');
+    updated.points_ar = JSON.parse(updated.points_ar || '[]');
   }
   
   return updated;
@@ -101,6 +110,7 @@ const updateFourthContainerStatus = async (id, status) => {
   // Parse points from JSON string to array for the response
   if (updated) {
     updated.points = JSON.parse(updated.points || '[]');
+    updated.points_ar = JSON.parse(updated.points_ar || '[]');
   }
   
   return updated;
@@ -122,6 +132,29 @@ const updateFourthContainerPoints = async (id, points) => {
   // Parse points from JSON string to array for the response
   if (updated) {
     updated.points = JSON.parse(updated.points || '[]');
+    updated.points_ar = JSON.parse(updated.points_ar || '[]');
+  }
+  
+  return updated;
+};
+
+// Update FourthContainer points_ar
+const updateFourthContainerPointsAr = async (id, points_ar) => {
+  const pointsArString = JSON.stringify(points_ar || []);
+  
+  const updated = await prisma.fourthContainer.update({
+    where: {
+      id: parseInt(id),
+    },
+    data: {
+      points_ar: pointsArString,
+    },
+  });
+  
+  // Parse points from JSON string to array for the response
+  if (updated) {
+    updated.points = JSON.parse(updated.points || '[]');
+    updated.points_ar = JSON.parse(updated.points_ar || '[]');
   }
   
   return updated;
@@ -135,4 +168,5 @@ module.exports = {
   deleteFourthContainer,
   updateFourthContainerStatus,
   updateFourthContainerPoints,
+  updateFourthContainerPointsAr,
 };

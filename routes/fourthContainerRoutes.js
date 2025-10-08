@@ -24,4 +24,7 @@ router.patch('/:id/status', verifyToken, fourthContainerController.updateFourthC
 // Update fourth container points (protected route)
 router.patch('/:id/points', verifyToken, fourthContainerController.updateFourthContainerPoints);
 
+// Update fourth container points_ar (protected route)
+router.patch('/:id/points-ar', verifyToken, fourthContainerController.updateFourthContainerPointsAr);
+
 module.exports = router;

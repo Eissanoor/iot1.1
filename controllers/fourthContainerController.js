@@ -16,7 +16,8 @@ const getAllFourthContainers = async (req, res, next) => {
     const containersWithParsedPoints = fourthContainers.map(container => {
       return {
         ...container,
-        points: JSON.parse(container.points || '[]')
+        points: JSON.parse(container.points || '[]'),
+        points_ar: JSON.parse(container.points_ar || '[]')
       };
     });
     
@@ -58,7 +59,7 @@ const createFourthContainer = async (req, res, next) => {
       }
       
       try {
-        const { name, name_ar, description, description_ar, status, url, points } = req.body;
+        const { name, name_ar, description, description_ar, status, url, points, points_ar } = req.body;
         
         // Validate required fields
         if (!name || !name_ar) {
@@ -83,6 +84,20 @@ const createFourthContainer = async (req, res, next) => {
           }
         }
         
+        // Parse points_ar if provided as string
+        let parsedPointsAr = [];
+        if (points_ar) {
+          try {
+            // Check if points_ar is already an array or a JSON string
+            parsedPointsAr = typeof points_ar === 'string' ? 
+              (points_ar.startsWith('[') ? JSON.parse(points_ar) : [points_ar]) : 
+              points_ar;
+          } catch (error) {
+            // If parsing fails, treat it as a single point
+            parsedPointsAr = [points_ar];
+          }
+        }
+        
         // Prepare data for database
         const fourthContainerData = {
           name,
@@ -92,6 +107,7 @@ const createFourthContainer = async (req, res, next) => {
           status: status === 'true' || status === true,
           url,
           points: parsedPoints,
+          points_ar: parsedPointsAr,
           image: req.file ? getImageUrl(req.file.filename) : null
         };
         
@@ -99,6 +115,7 @@ const createFourthContainer = async (req, res, next) => {
         
         // Parse points for response
         newFourthContainer.points = JSON.parse(newFourthContainer.points || '[]');
+        newFourthContainer.points_ar = JSON.parse(newFourthContainer.points_ar || '[]');
         
         res.status(201).json({
           success: true,
@@ -128,7 +145,7 @@ const updateFourthContainer = async (req, res, next) => {
       
       try {
         const { id } = req.params;
-        const { name, name_ar, description, description_ar, status, url, points } = req.body;
+        const { name, name_ar, description, description_ar, status, url, points, points_ar } = req.body;
         
         // Check if FourthContainer exists
         const existingFourthContainer = await fourthContainerModel.getFourthContainerById(id);
@@ -163,6 +180,20 @@ const updateFourthContainer = async (req, res, next) => {
           }
         }
         
+        // Parse points_ar if provided
+        let parsedPointsAr = undefined;
+        if (points_ar) {
+          try {
+            // Check if points_ar is already an array or a JSON string
+            parsedPointsAr = typeof points_ar === 'string' ? 
+              (points_ar.startsWith('[') ? JSON.parse(points_ar) : [points_ar]) : 
+              points_ar;
+          } catch (error) {
+            // If parsing fails, treat it as a single point
+            parsedPointsAr = [points_ar];
+          }
+        }
+        
         // Prepare data for database
         const fourthContainerData = {
           name,
@@ -171,7 +202,8 @@ const updateFourthContainer = async (req, res, next) => {
           description_ar,
           status: status === 'true' || status === true,
           url,
-          points: parsedPoints
+          points: parsedPoints,
+          points_ar: parsedPointsAr
         };
         
         // Handle image update
@@ -304,6 +336,45 @@ const updateFourthContainerPoints = async (req, res, next) => {
   }
 };
 
+// Update FourthContainer Points AR
+const updateFourthContainerPointsAr = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { points_ar } = req.body;
+    
+    if (!points_ar) {
+      return next(createError(400, 'Points AR are required'));
+    }
+    
+    // Check if FourthContainer exists
+    const existingFourthContainer = await fourthContainerModel.getFourthContainerById(id);
+    if (!existingFourthContainer) {
+      return next(createError(404, 'Fourth container not found'));
+    }
+    
+    // Parse points_ar if provided as string
+    let parsedPointsAr = [];
+    try {
+      // Check if points_ar is already an array or a JSON string
+      parsedPointsAr = typeof points_ar === 'string' ? 
+        (points_ar.startsWith('[') ? JSON.parse(points_ar) : [points_ar]) : 
+        points_ar;
+    } catch (error) {
+      // If parsing fails, treat it as a single point
+      parsedPointsAr = [points_ar];
+    }
+    
+    const updatedFourthContainer = await fourthContainerModel.updateFourthContainerPointsAr(id, parsedPointsAr);
+    
+    res.status(200).json({
+      success: true,
+      data: updatedFourthContainer
+    });
+  } catch (error) {
+    next(createError(500, 'Error updating fourth container points AR'));
+  }
+};
+
 module.exports = {
   getAllFourthContainers,
   getFourthContainerById,
@@ -311,5 +382,6 @@ module.exports = {
   updateFourthContainer,
   deleteFourthContainer,
   updateFourthContainerStatus,
-  updateFourthContainerPoints
+  updateFourthContainerPoints,
+  updateFourthContainerPointsAr
 };
