@@ -554,8 +554,8 @@ model FourthContainer {
   image           String?  // Path to the image file
   status          Boolean  @default(true)
   url             String?
-  points          String   // Stored as JSON string of array
-  points_ar       String   // Stored as JSON string of array for Arabic
+  points          String?   // Stored as JSON string of array
+  points_ar       String?   // Stored as JSON string of array for Arabic
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
