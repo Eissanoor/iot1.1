@@ -705,3 +705,13 @@ model ManageLocation {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model Heading {
+  id         Int      @id @default(autoincrement())
+  name       String
+  name_ar    String
+  caption    String?
+  caption_ar String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
