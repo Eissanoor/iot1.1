@@ -10,8 +10,11 @@ const createService = async (req, res) => {
     
     // Handle both camelCase and snake_case field names
     const name = serviceData.name;
+    const nameAr = serviceData.nameAr || serviceData.name_ar;
     const displayName = serviceData.displayName || serviceData.display_name;
+    const displayNameAr = serviceData.displayNameAr || serviceData.display_name_ar;
     const description = serviceData.description;
+    const descriptionAr = serviceData.descriptionAr || serviceData.description_ar;
     const serviceType = serviceData.serviceType || serviceData.service_type;
     const isActive = serviceData.isActive || serviceData.is_active;
     
@@ -31,8 +34,11 @@ const createService = async (req, res) => {
     // Prepare data in camelCase format
     const normalizedData = {
       name,
+      nameAr,
       displayName,
+      displayNameAr,
       description,
+      descriptionAr,
       serviceType,
       isActive: isActive !== undefined ? isActive : true
     };
@@ -109,9 +115,15 @@ const updateService = async (req, res) => {
     const normalizedData = {};
     
     if (serviceData.name !== undefined) normalizedData.name = serviceData.name;
+    if (serviceData.nameAr !== undefined || serviceData.name_ar !== undefined) 
+      normalizedData.nameAr = serviceData.nameAr || serviceData.name_ar;
     if (serviceData.displayName !== undefined || serviceData.display_name !== undefined) 
       normalizedData.displayName = serviceData.displayName || serviceData.display_name;
+    if (serviceData.displayNameAr !== undefined || serviceData.display_name_ar !== undefined) 
+      normalizedData.displayNameAr = serviceData.displayNameAr || serviceData.display_name_ar;
     if (serviceData.description !== undefined) normalizedData.description = serviceData.description;
+    if (serviceData.descriptionAr !== undefined || serviceData.description_ar !== undefined) 
+      normalizedData.descriptionAr = serviceData.descriptionAr || serviceData.description_ar;
     if (serviceData.serviceType !== undefined || serviceData.service_type !== undefined) 
       normalizedData.serviceType = serviceData.serviceType || serviceData.service_type;
     if (serviceData.isActive !== undefined || serviceData.is_active !== undefined) 

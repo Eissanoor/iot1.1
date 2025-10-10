@@ -11,7 +11,7 @@ exports.createSubscriptionPlan = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, displayName, description, price, billingCycle, isPopular, isActive } = req.body;
+    const { name, nameAr, displayName, displayNameAr, description, descriptionAr, price, billingCycle, isPopular, isActive } = req.body;
 
     // Check if plan with same name already exists
     const existingPlan = await SubscriptionPlan.findByName(name);
@@ -21,8 +21,11 @@ exports.createSubscriptionPlan = async (req, res) => {
 
     const newPlan = await SubscriptionPlan.create({
       name,
+      nameAr,
       displayName,
+      displayNameAr,
       description,
+      descriptionAr,
       price: parseFloat(price),
       billingCycle,
       isPopular: isPopular || false,
@@ -83,8 +86,11 @@ exports.getAllSubscriptionPlans = async (req, res) => {
     const formattedPlans = plans.map(plan => ({
       id: plan.id,
       name: plan.name,
+      name_ar: plan.nameAr,
       display_name: plan.displayName,
+      display_name_ar: plan.displayNameAr,
       description: plan.description,
+      description_ar: plan.descriptionAr,
       price: plan.price,
       billing_cycle: plan.billingCycle,
       is_popular: plan.isPopular,
@@ -93,7 +99,9 @@ exports.getAllSubscriptionPlans = async (req, res) => {
         .map(ps => ({
           id: ps.service.id,
           name: ps.service.display_name,
+          name_ar: ps.service.name_ar,
           description: ps.service.description,
+          description_ar: ps.service.description_ar,
           service_type: ps.service.service_type,
           icon: ps.service.icon,
         })),
@@ -162,8 +170,11 @@ exports.getSubscriptionPlanById = async (req, res) => {
     const formattedPlan = {
       id: plan.id,
       name: plan.name,
+      name_ar: plan.nameAr,
       display_name: plan.displayName,
+      display_name_ar: plan.displayNameAr,
       description: plan.description,
+      description_ar: plan.descriptionAr,
       price: plan.price,
       billing_cycle: plan.billingCycle,
       is_popular: plan.isPopular,
@@ -173,7 +184,9 @@ exports.getSubscriptionPlanById = async (req, res) => {
         .map(ps => ({
           id: ps.service.id,
           name: ps.service.display_name,
+          name_ar: ps.service.name_ar,
           description: ps.service.description,
+          description_ar: ps.service.description_ar,
           service_type: ps.service.service_type,
           icon: ps.service.icon,
         })),
@@ -207,7 +220,7 @@ exports.updateSubscriptionPlan = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { name, displayName, description, price, billingCycle, isPopular, isActive } = req.body;
+    const { name, nameAr, displayName, displayNameAr, description, descriptionAr, price, billingCycle, isPopular, isActive } = req.body;
     
     // Check if plan exists
     const existingPlan = await SubscriptionPlan.findById(id);
@@ -231,8 +244,11 @@ exports.updateSubscriptionPlan = async (req, res) => {
 
     const updateData = {};
     if (name) updateData.name = name;
+    if (nameAr !== undefined) updateData.nameAr = nameAr;
     if (displayName) updateData.displayName = displayName;
+    if (displayNameAr !== undefined) updateData.displayNameAr = displayNameAr;
     if (description !== undefined) updateData.description = description;
+    if (descriptionAr !== undefined) updateData.descriptionAr = descriptionAr;
     if (price !== undefined) updateData.price = parseFloat(price);
     if (billingCycle) updateData.billingCycle = billingCycle;
     if (isPopular !== undefined) updateData.isPopular = isPopular;

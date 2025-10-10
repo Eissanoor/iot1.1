@@ -7,7 +7,11 @@ const { verifyAdminToken } = require('../middleware/auth');
 // Validation rules
 const subscriptionPlanValidation = [
   check('name', 'Name is required').not().isEmpty().isString().trim(),
+  check('nameAr', 'Name Arabic must be a string').optional().isString().trim(),
   check('displayName', 'Display name is required').not().isEmpty().isString().trim(),
+  check('displayNameAr', 'Display name Arabic must be a string').optional().isString().trim(),
+  check('description', 'Description must be a string').optional().isString().trim(),
+  check('descriptionAr', 'Description Arabic must be a string').optional().isString().trim(),
   check('price', 'Price is required and must be a number').isNumeric(),
   check('billingCycle', 'Billing cycle is required').optional().isString().trim(),
   check('isPopular', 'Is popular must be a boolean').optional().isBoolean(),

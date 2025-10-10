@@ -6,8 +6,11 @@ const createService = async (serviceData) => {
   // Convert camelCase to snake_case for database fields
   const dbData = {
     name: serviceData.name,
+    name_ar: serviceData.nameAr,
     display_name: serviceData.displayName,
+    display_name_ar: serviceData.displayNameAr,
     description: serviceData.description,
+    description_ar: serviceData.descriptionAr,
     service_type: serviceData.serviceType,
     icon: serviceData.icon,
     is_active: serviceData.isActive
@@ -26,8 +29,11 @@ const getAllServices = async () => {
     const serviceObj = {
       id: service.id,
       name: service.name,
+      nameAr: service.name_ar,
       displayName: service.display_name,
+      displayNameAr: service.display_name_ar,
       description: service.description,
+      descriptionAr: service.description_ar,
       serviceType: service.service_type,
       icon: service.icon,
       isActive: service.is_active,
@@ -55,8 +61,11 @@ const getServiceById = async (id) => {
   const serviceObj = {
     id: service.id,
     name: service.name,
+    nameAr: service.name_ar,
     displayName: service.display_name,
+    displayNameAr: service.display_name_ar,
     description: service.description,
+    descriptionAr: service.description_ar,
     serviceType: service.service_type,
     icon: service.icon,
     isActive: service.is_active,
@@ -83,8 +92,11 @@ const getServiceByName = async (name) => {
   const serviceObj = {
     id: service.id,
     name: service.name,
+    nameAr: service.name_ar,
     displayName: service.display_name,
+    displayNameAr: service.display_name_ar,
     description: service.description,
+    descriptionAr: service.description_ar,
     serviceType: service.service_type,
     icon: service.icon,
     isActive: service.is_active,
@@ -105,8 +117,11 @@ const updateService = async (id, serviceData) => {
   const dbData = {};
   
   if (serviceData.name) dbData.name = serviceData.name;
+  if (serviceData.nameAr !== undefined) dbData.name_ar = serviceData.nameAr;
   if (serviceData.displayName) dbData.display_name = serviceData.displayName;
+  if (serviceData.displayNameAr !== undefined) dbData.display_name_ar = serviceData.displayNameAr;
   if (serviceData.description !== undefined) dbData.description = serviceData.description;
+  if (serviceData.descriptionAr !== undefined) dbData.description_ar = serviceData.descriptionAr;
   if (serviceData.serviceType) dbData.service_type = serviceData.serviceType;
   if (serviceData.icon !== undefined) dbData.icon = serviceData.icon;
   if (serviceData.isActive !== undefined) dbData.is_active = serviceData.isActive;
@@ -120,8 +135,11 @@ const updateService = async (id, serviceData) => {
   const serviceObj = {
     id: service.id,
     name: service.name,
+    nameAr: service.name_ar,
     displayName: service.display_name,
+    displayNameAr: service.display_name_ar,
     description: service.description,
+    descriptionAr: service.description_ar,
     serviceType: service.service_type,
     icon: service.icon,
     isActive: service.is_active,
