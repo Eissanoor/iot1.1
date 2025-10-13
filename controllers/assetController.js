@@ -25,6 +25,7 @@ exports.createAsset = async (req, res) => {
       modifiers,
       manufactureDate,
       expiryDate,
+      currentStock,
       status
     } = req.body;
     
@@ -92,6 +93,7 @@ exports.createAsset = async (req, res) => {
         modifiers: modifiers || null,
         manufactureDate: parsedManufactureDate,
         expiryDate: parsedExpiryDate,
+        currentStock: currentStock !== undefined ? parseInt(currentStock) : 0,
         status: status !== undefined ? parseInt(status) : 0,
         categoryId: parseInt(categoryId),
         subCategoryId: parseInt(subCategoryId),
@@ -218,6 +220,7 @@ exports.updateAsset = async (req, res) => {
       modifiers,
       manufactureDate,
       expiryDate,
+      currentStock,
       status
     } = req.body;
     
@@ -302,6 +305,7 @@ exports.updateAsset = async (req, res) => {
         modifiers: modifiers !== undefined ? modifiers : existingAsset.modifiers,
         manufactureDate: parsedManufactureDate !== undefined ? parsedManufactureDate : existingAsset.manufactureDate,
         expiryDate: parsedExpiryDate !== undefined ? parsedExpiryDate : existingAsset.expiryDate,
+        currentStock: currentStock !== undefined ? parseInt(currentStock) : existingAsset.currentStock,
         status: status !== undefined ? parseInt(status) : existingAsset.status,
         categoryId: categoryId !== undefined ? parseInt(categoryId) : existingAsset.categoryId,
         subCategoryId: subCategoryId !== undefined ? parseInt(subCategoryId) : existingAsset.subCategoryId,
