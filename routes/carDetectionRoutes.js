@@ -8,7 +8,9 @@ const {
   updateCarDetection,
   deleteCarDetection,
   getCarDetectionHistory,
-  getDetectionSummary
+  getDetectionSummary,
+  exportCarDetectionToCSV,
+  getCarDetectionData
 } = require('../controllers/carDetectionController');
 
 // Create new car detection record
@@ -25,6 +27,12 @@ router.get('/history', getCarDetectionHistory);
 
 // Get detection summary
 router.get('/summary', getDetectionSummary);
+
+// Get car detection data with period filtering and optional CSV export
+router.get('/data', getCarDetectionData);
+
+// Export car detection data to CSV
+router.get('/export', exportCarDetectionToCSV);
 
 // Get car detection record by ID
 router.get('/:id', getCarDetectionById);
