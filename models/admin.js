@@ -46,6 +46,42 @@ class Admin {
       data
     });
   }
+
+  // Set login OTP details
+  static async setLoginOtp(adminId, otp, expiresAt) {
+    return prisma.admin.update({
+      where: { id: adminId },
+      data: {
+        loginOtp: otp,
+        loginOtpExpiresAt: expiresAt,
+        loginOtpAttempts: 0
+      }
+    });
+  }
+
+  // Clear login OTP details
+  static async clearLoginOtp(adminId) {
+    return prisma.admin.update({
+      where: { id: adminId },
+      data: {
+        loginOtp: null,
+        loginOtpExpiresAt: null,
+        loginOtpAttempts: 0
+      }
+    });
+  }
+
+  // Increment OTP attempts counter
+  static async incrementOtpAttempts(adminId) {
+    return prisma.admin.update({
+      where: { id: adminId },
+      data: {
+        loginOtpAttempts: {
+          increment: 1
+        }
+      }
+    });
+  }
   
   // Verify password
   static async verifyPassword(plainPassword, hashedPassword) {

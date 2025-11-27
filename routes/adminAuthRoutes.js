@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/auth');
 // Admin auth routes
 router.post('/signup', adminController.signup);
 router.post('/login', adminController.login);
+router.post('/login/otp/verify', adminController.verifyLoginOtp);
 router.get('/me', authMiddleware.verifyAdminToken, adminController.getMe);
 
 module.exports = router; 

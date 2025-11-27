@@ -1,8 +1,11 @@
 const Admin = require('../models/admin');
 const jwt = require('jsonwebtoken');
+const { sendOtpEmail } = require('../utils/emailUtils');
 
 // JWT secret key - should be in environment variables in production
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const OTP_EXPIRY_MINUTES = parseInt(process.env.ADMIN_LOGIN_OTP_EXPIRY_MINUTES || '5', 10);
+const MAX_OTP_ATTEMPTS = parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS || '5', 10);
 
 // Admin signup controller
 exports.signup = async (req, res) => {
@@ -90,10 +93,78 @@ exports.login = async (req, res) => {
       });
     }
     
-    // Generate token and send response
-    generateTokenAndResponse(admin, res);
+    // Generate OTP, persist it, and send via email
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await Admin.setLoginOtp(admin.id, otp, expiresAt);
+
+    const emailResult = await sendOtpEmail({
+      toEmail: admin.email,
+      otp,
+      expiresAt
+    });
+
+    if (emailResult?.error) {
+      console.error('Failed to send OTP email:', emailResult.details || emailResult.error);
+      return res.status(500).json({ error: 'Unable to deliver OTP email. Try again later.' });
+    }
+
+    res.status(200).json({
+      message: 'OTP sent to registered email. Please verify to complete login.',
+      otpExpiresAt: expiresAt
+    });
   } catch (error) {
     console.error('Error during admin login:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Verify login OTP and finalize authentication
+exports.verifyLoginOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        error: 'Email and OTP are required'
+      });
+    }
+
+    const admin = await Admin.findByEmail(email);
+    if (!admin || !admin.loginOtp) {
+      return res.status(400).json({
+        error: 'OTP not found or already used'
+      });
+    }
+
+    if (admin.loginOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(429).json({
+        error: 'Maximum OTP attempts exceeded. Please restart login.'
+      });
+    }
+
+    const isExpired = !admin.loginOtpExpiresAt || new Date(admin.loginOtpExpiresAt) < new Date();
+    if (isExpired) {
+      await Admin.clearLoginOtp(admin.id);
+      return res.status(410).json({
+        error: 'OTP expired. Please restart login.'
+      });
+    }
+
+    if (admin.loginOtp !== otp) {
+      const updatedAdmin = await Admin.incrementOtpAttempts(admin.id);
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - updatedAdmin.loginOtpAttempts);
+      return res.status(401).json({
+        error: 'Invalid OTP',
+        attemptsLeft
+      });
+    }
+
+    const sanitizedAdmin = await Admin.clearLoginOtp(admin.id);
+    generateTokenAndResponse(sanitizedAdmin, res);
+  } catch (error) {
+    console.error('Error verifying admin login OTP:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -117,6 +188,10 @@ function generateTokenAndResponse(admin, res) {
     },
     token
   });
+}
+
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // Get current admin info

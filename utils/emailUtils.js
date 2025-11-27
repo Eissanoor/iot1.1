@@ -27,6 +27,73 @@ const createTransporter = () => {
   });
 };
 
+// OTP email template
+const getOtpEmailTemplate = ({ otp, expiresAt }) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Admin Login Verification</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f5f5f5;
+          padding: 0;
+          margin: 0;
+        }
+        .container {
+          max-width: 480px;
+          margin: 30px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          overflow: hidden;
+        }
+        .header {
+          background-color: #1e5799;
+          color: #ffffff;
+          padding: 18px 24px;
+        }
+        .content {
+          padding: 24px;
+          color: #333333;
+        }
+        .otp {
+          font-size: 32px;
+          font-weight: bold;
+          letter-spacing: 6px;
+          text-align: center;
+          margin: 24px 0;
+        }
+        .footer {
+          font-size: 12px;
+          color: #666666;
+          text-align: center;
+          padding: 16px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>Verify Your Login</h2>
+        </div>
+        <div class="content">
+          <p>Use the one-time password (OTP) below to finish signing in:</p>
+          <div class="otp">${otp}</div>
+          <p>This code expires at ${expiresAt.toLocaleTimeString()}.</p>
+          <p>If you did not attempt to sign in, please contact support.</p>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} GSTSA. All rights reserved.
+        </div>
+      </div>
+    </body>
+  </html>
+  `;
+};
+
 // Demo request email template
 const getDemoRequestEmailTemplate = (data) => {
   return `
@@ -263,6 +330,27 @@ const sendDemoRequestEmail = async (data) => {
   }
 };
 
+// Send admin login OTP email
+const sendOtpEmail = async ({ toEmail, otp, expiresAt }) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"Admin Login" <noreply@yourdomain.com>',
+      to: toEmail,
+      subject: 'Your Admin Login OTP',
+      html: getOtpEmailTemplate({ otp, expiresAt })
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('OTP email sent:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Failed to send OTP email:', error);
+    return { error: 'Email sending failed', details: error.message };
+  }
+};
+
 // Send multiple emails utility with retry logic
 const sendMultipleEmails = async (emailData) => {
   const maxRetries = 3;
@@ -399,5 +487,6 @@ module.exports = {
   sendDemoRequestEmail,
   sendMultipleEmails,
   generateQRCode,
-  convertEjsToPdf
+  convertEjsToPdf,
+  sendOtpEmail
 };

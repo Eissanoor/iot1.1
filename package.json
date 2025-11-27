@@ -11,7 +11,8 @@
     "seed-db": "node seed-db.js",
     "seed-users": "node seed-users.js",
     "check-db-url": "node check-db-url.js",
-    "migrate-data": "node migrate-data.js"
+    "migrate-data": "node migrate-data.js",
+    "studio": "npx prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
