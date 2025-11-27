@@ -169,6 +169,50 @@ exports.verifyLoginOtp = async (req, res) => {
   }
 };
 
+// Resend login OTP
+exports.resendLoginOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Email is required'
+      });
+    }
+
+    const admin = await Admin.findByEmail(email);
+    if (!admin) {
+      return res.status(404).json({
+        error: 'Admin not found'
+      });
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await Admin.setLoginOtp(admin.id, otp, expiresAt);
+
+    const emailResult = await sendOtpEmail({
+      toEmail: admin.email,
+      otp,
+      expiresAt
+    });
+
+    if (emailResult?.error) {
+      console.error('Failed to resend OTP email:', emailResult.details || emailResult.error);
+      return res.status(500).json({ error: 'Unable to resend OTP email. Try again later.' });
+    }
+
+    res.status(200).json({
+      message: 'OTP resent successfully. Please verify to complete login.',
+      otpExpiresAt: expiresAt
+    });
+  } catch (error) {
+    console.error('Error resending admin login OTP:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Helper function to generate token and response
 function generateTokenAndResponse(admin, res) {
   // Create JWT token
