@@ -3,7 +3,15 @@ const departmentModel = require('../models/department');
 // Create a new department
 const createDepartment = async (req, res) => {
   try {
-    const { departmentCode, departmentName } = req.body;
+    const {
+      departmentCode,
+      departmentName,
+      departmentDescription,
+      location,
+      annualBudget,
+      status,
+      hodId,
+    } = req.body;
     
     // Check if required fields are provided
     if (!departmentCode || !departmentName) {
@@ -22,9 +30,30 @@ const createDepartment = async (req, res) => {
       });
     }
     
+    // If hodId is provided, verify it exists
+    if (hodId !== undefined && hodId !== null) {
+      const prisma = require('../prisma/client');
+      const headOfDept = await prisma.headOfDepartment.findUnique({
+        where: { id: Number(hodId) }
+      });
+      if (!headOfDept) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Head of Department with provided ID does not exist' 
+        });
+      }
+    }
+    
     const department = await departmentModel.createDepartment({
       departmentCode,
-      departmentName
+      departmentName,
+      departmentDescription: departmentDescription || '',
+      location: location || '',
+      annualBudget: annualBudget || '',
+      status: status || 'active',
+      ...(hodId !== undefined && hodId !== null
+        ? { hodId: Number(hodId) }
+        : {}),
     });
     
     res.status(201).json({
@@ -98,7 +127,15 @@ const getDepartmentById = async (req, res) => {
 const updateDepartment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { departmentCode, departmentName } = req.body;
+    const {
+      departmentCode,
+      departmentName,
+      departmentDescription,
+      location,
+      annualBudget,
+      status,
+      hodId,
+    } = req.body;
     
     // Check if department exists
     const existingDepartment = await departmentModel.getDepartmentById(id);
@@ -120,9 +157,33 @@ const updateDepartment = async (req, res) => {
       }
     }
     
+    // If hodId is provided, verify it exists
+    if (hodId !== undefined && hodId !== null) {
+      const prisma = require('../prisma/client');
+      const headOfDept = await prisma.headOfDepartment.findUnique({
+        where: { id: Number(hodId) }
+      });
+      if (!headOfDept) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Head of Department with provided ID does not exist' 
+        });
+      }
+    }
+    
     const updatedDepartment = await departmentModel.updateDepartment(id, {
       departmentCode: departmentCode || existingDepartment.departmentCode,
-      departmentName: departmentName || existingDepartment.departmentName
+      departmentName: departmentName || existingDepartment.departmentName,
+      departmentDescription: departmentDescription ?? existingDepartment.departmentDescription,
+      location: location ?? existingDepartment.location,
+      annualBudget: annualBudget ?? existingDepartment.annualBudget,
+      status: status ?? existingDepartment.status,
+      hodId:
+        hodId !== undefined
+          ? hodId === null
+            ? null
+            : Number(hodId)
+          : existingDepartment.hodId,
     });
     
     res.status(200).json({

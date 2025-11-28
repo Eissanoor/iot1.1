@@ -17,6 +17,10 @@ const getAllDepartments = async (page = 1, limit = 10) => {
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
+      include: {
+        employees: true, // include related employees
+        headOfDepartment: true, // include related head of department
+      },
     }),
     prisma.department.count(),
   ]);
@@ -36,6 +40,10 @@ const getAllDepartments = async (page = 1, limit = 10) => {
 const getDepartmentById = async (id) => {
   return await prisma.department.findUnique({
     where: { id: parseInt(id) },
+    include: {
+      employees: true, // include related employees
+      headOfDepartment: true, // include related head of department
+    },
   });
 };
 

@@ -28,6 +28,7 @@ const brandRoutes = require('./routes/brandRoutes');
 const assetConditionRoutes = require('./routes/assetConditionRoutes');
 const employeeListRoutes = require('./routes/employeeListRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
+const headOfDepartmentRoutes = require('./routes/headOfDepartmentRoutes');
 const npkSensorRoutes = require('./routes/npkSensorRoutes');
 const deviceCategoryRoutes = require('./routes/deviceCategoryRoutes');
 const iotDeviceRoutes = require('./routes/iotDeviceRoutes');
@@ -127,6 +128,7 @@ async function startServer() {
     app.use('/api/asset-conditions', assetConditionRoutes);
     app.use('/api/employees', employeeListRoutes);
     app.use('/api/departments', departmentRoutes);
+    app.use('/api/heads-of-department', headOfDepartmentRoutes);
     app.use('/api/npk', npkSensorRoutes);
     app.use('/api/device-categories', deviceCategoryRoutes);
     app.use('/api/iot-devices', iotDeviceRoutes);

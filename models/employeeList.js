@@ -5,19 +5,26 @@ class EmployeeList {
   // Create a new employee
   static async create(data) {
     return prisma.employeeList.create({
-      data
+      data,
     });
   }
 
   // Get all employees
   static async findAll() {
-    return prisma.employeeList.findMany();
+    return prisma.employeeList.findMany({
+      include: {
+        department: true, // include related department if any
+      },
+    });
   }
 
   // Get employee by ID
   static async findById(id) {
     return prisma.employeeList.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(id) },
+      include: {
+        department: true,
+      },
     });
   }
 

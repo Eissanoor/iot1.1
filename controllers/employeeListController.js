@@ -3,7 +3,7 @@ const EmployeeList = require('../models/employeeList');
 // Create a new employee
 exports.createEmployee = async (req, res) => {
   try {
-    const { employeeName, jobType } = req.body;
+    const { employeeName, jobType, departmentId } = req.body;
 
     // Validate input
     if (!employeeName || !jobType) {
@@ -15,7 +15,9 @@ exports.createEmployee = async (req, res) => {
 
     const employee = await EmployeeList.create({
       employeeName,
-      jobType
+      jobType,
+      // departmentId is optional; only set if provided
+      ...(departmentId ? { departmentId: Number(departmentId) } : {}),
     });
 
     return res.status(201).json({
@@ -85,7 +87,7 @@ exports.getEmployeeById = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { employeeName, jobType } = req.body;
+    const { employeeName, jobType, departmentId } = req.body;
     
     // Check if employee exists
     const existingEmployee = await EmployeeList.findById(id);
@@ -100,7 +102,13 @@ exports.updateEmployee = async (req, res) => {
     // Update employee
     const updatedEmployee = await EmployeeList.update(id, {
       employeeName: employeeName || existingEmployee.employeeName,
-      jobType: jobType || existingEmployee.jobType
+      jobType: jobType || existingEmployee.jobType,
+      departmentId:
+        departmentId !== undefined
+          ? departmentId === null
+            ? null
+            : Number(departmentId)
+          : existingEmployee.departmentId,
     });
     
     return res.status(200).json({

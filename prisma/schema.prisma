@@ -146,6 +146,9 @@ model EmployeeList {
   
   // Relations
   transferAssets TransferAsset[] // One-to-many relationship with TransferAsset
+
+  departmentId  Int?
+  department    Department? @relation(fields: [departmentId], references: [id])
 }
 
 // Asset model
@@ -271,11 +274,35 @@ model AssetCondition {
   updatedAt   DateTime  @updatedAt
 }
 
+// HeadOfDepartment model
+model HeadOfDepartment {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phoneNo   String
+  email     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  departments Department[] // One-to-many: one Head can be head of multiple Departments
+}
+
 // Department model
 model Department {
-  id              Int       @id @default(autoincrement())
-  departmentCode  String    @unique
-  departmentName  String    
+  id                     Int            @id @default(autoincrement())
+  departmentCode         String         @unique
+  departmentName         String
+  departmentDescription  String
+  location               String
+  annualBudget           String
+  status                 String
+
+  // Relations
+  employees              EmployeeList[] // One-to-many: one Department has many Employees
+  
+  hodId                  Int?
+  headOfDepartment       HeadOfDepartment? @relation(fields: [hodId], references: [id])
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
