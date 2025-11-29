@@ -3,7 +3,7 @@ const Role = require('../models/role');
 // Create a new role
 exports.createRole = async (req, res) => {
   try {
-    const { name, status, description, accessLevelId } = req.body;
+    const { name, status, description, accessLevelId, permissions } = req.body;
 
     // Validate input
     if (!name || !status) {
@@ -13,9 +13,10 @@ exports.createRole = async (req, res) => {
       });
     }
 
+    const prisma = require('../prisma/client');
+
     // If accessLevelId is provided, verify it exists
     if (accessLevelId !== undefined && accessLevelId !== null) {
-      const prisma = require('../prisma/client');
       const accessLevel = await prisma.accessLevel.findUnique({
         where: { id: Number(accessLevelId) }
       });
@@ -27,13 +28,48 @@ exports.createRole = async (req, res) => {
       }
     }
 
-    const role = await Role.create({
-      name,
-      status,
-      description: description || null,
-      ...(accessLevelId !== undefined && accessLevelId !== null
-        ? { accessLevelId: Number(accessLevelId) }
-        : {}),
+    // Validate and verify permissions if provided
+    if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+      const permissionIds = permissions.map(p => Number(p));
+      const existingPermissions = await prisma.permission.findMany({
+        where: { id: { in: permissionIds } }
+      });
+      
+      if (existingPermissions.length !== permissionIds.length) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'One or more permission IDs do not exist' 
+        });
+      }
+    }
+
+    // Create role with permissions
+    const role = await prisma.role.create({
+      data: {
+        name,
+        status,
+        description: description || null,
+        ...(accessLevelId !== undefined && accessLevelId !== null
+          ? { accessLevelId: Number(accessLevelId) }
+          : {}),
+        ...(permissions && Array.isArray(permissions) && permissions.length > 0
+          ? {
+              permissions: {
+                create: permissions.map(permissionId => ({
+                  permissionId: Number(permissionId)
+                }))
+              }
+            }
+          : {}),
+      },
+      include: {
+        accessLevel: true,
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
     });
 
     return res.status(201).json({
@@ -103,7 +139,9 @@ exports.getRoleById = async (req, res) => {
 exports.updateRole = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, status, description, accessLevelId } = req.body;
+    const { name, status, description, accessLevelId, permissions } = req.body;
+    
+    const prisma = require('../prisma/client');
     
     // Check if role exists
     const existingRole = await Role.findById(id);
@@ -117,7 +155,6 @@ exports.updateRole = async (req, res) => {
     
     // If accessLevelId is provided, verify it exists
     if (accessLevelId !== undefined && accessLevelId !== null) {
-      const prisma = require('../prisma/client');
       const accessLevel = await prisma.accessLevel.findUnique({
         where: { id: Number(accessLevelId) }
       });
@@ -128,9 +165,26 @@ exports.updateRole = async (req, res) => {
         });
       }
     }
+
+    // Validate and verify permissions if provided
+    if (permissions !== undefined) {
+      if (Array.isArray(permissions) && permissions.length > 0) {
+        const permissionIds = permissions.map(p => Number(p));
+        const existingPermissions = await prisma.permission.findMany({
+          where: { id: { in: permissionIds } }
+        });
+        
+        if (existingPermissions.length !== permissionIds.length) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'One or more permission IDs do not exist' 
+          });
+        }
+      }
+    }
     
-    // Update role
-    const updatedRole = await Role.update(id, {
+    // Prepare update data
+    const updateData = {
       name: name !== undefined ? name : existingRole.name,
       status: status !== undefined ? status : existingRole.status,
       description: description !== undefined ? description : existingRole.description,
@@ -140,6 +194,37 @@ exports.updateRole = async (req, res) => {
             ? null
             : Number(accessLevelId)
           : existingRole.accessLevelId,
+    };
+
+    // Update permissions if provided
+    if (permissions !== undefined) {
+      // Delete existing permissions
+      await prisma.rolePermission.deleteMany({
+        where: { roleId: Number(id) }
+      });
+
+      // Add new permissions if array is not empty
+      if (Array.isArray(permissions) && permissions.length > 0) {
+        updateData.permissions = {
+          create: permissions.map(permissionId => ({
+            permissionId: Number(permissionId)
+          }))
+        };
+      }
+    }
+    
+    // Update role
+    const updatedRole = await prisma.role.update({
+      where: { id: Number(id) },
+      data: updateData,
+      include: {
+        accessLevel: true,
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
     });
     
     return res.status(200).json({

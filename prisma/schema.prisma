@@ -136,6 +136,34 @@ model VibrationSensor {
   timestamp      DateTime @default(now())
 }
 
+// PermissionCategory model
+model PermissionCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "User Management", "Asset Management"
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  permissions Permission[] // One-to-many relationship with Permission
+}
+
+// Permission model
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "View Users", "Create Users", "Edit Assets"
+  description String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  roles       RolePermission[] // Many-to-many relationship with Role
+  
+  categoryId  Int
+  category    PermissionCategory @relation(fields: [categoryId], references: [id])
+}
+
 // Role model
 model Role {
   id            Int      @id @default(autoincrement())
@@ -150,6 +178,23 @@ model Role {
   
   accessLevelId Int?
   accessLevel   AccessLevel? @relation(fields: [accessLevelId], references: [id])
+  
+  permissions   RolePermission[] // Many-to-many relationship with Permission
+}
+
+// RolePermission junction table for many-to-many relationship
+model RolePermission {
+  id           Int      @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([roleId, permissionId]) // Ensure unique role-permission combinations
 }
 
 // AccessLevel model

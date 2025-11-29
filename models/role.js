@@ -15,6 +15,11 @@ class Role {
       include: {
         employees: true, // include related employees if any
         accessLevel: true, // include related access level if any
+        permissions: {
+          include: {
+            permission: true, // include permission details
+          },
+        },
       },
     });
   }
@@ -26,6 +31,11 @@ class Role {
       include: {
         employees: true,
         accessLevel: true,
+        permissions: {
+          include: {
+            permission: true, // include permission details
+          },
+        },
       },
     });
   }

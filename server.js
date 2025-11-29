@@ -59,6 +59,8 @@ const manageLocationRoutes = require('./routes/manageLocationRoutes');
 const headingRoutes = require('./routes/headingRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const accessLevelRoutes = require('./routes/accessLevelRoutes');
+const permissionRoutes = require('./routes/permissionRoutes');
+const permissionCategoryRoutes = require('./routes/permissionCategoryRoutes');
 
 // Initialize Express app
 const app = express();
@@ -161,6 +163,8 @@ async function startServer() {
     app.use('/api/headings', headingRoutes);
     app.use('/api/roles', roleRoutes);
     app.use('/api/access-levels', accessLevelRoutes);
+    app.use('/api/permissions', permissionRoutes);
+    app.use('/api/permission-categories', permissionCategoryRoutes);
 
     // Start the server
     app.listen(PORT, () => {
