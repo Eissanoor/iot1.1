@@ -57,6 +57,8 @@ const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const manageLocationRoutes = require('./routes/manageLocationRoutes');
 const headingRoutes = require('./routes/headingRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+const accessLevelRoutes = require('./routes/accessLevelRoutes');
 
 // Initialize Express app
 const app = express();
@@ -157,6 +159,8 @@ async function startServer() {
     app.use('/api/reports', reportRoutes);
     app.use('/api/manage-locations', manageLocationRoutes);
     app.use('/api/headings', headingRoutes);
+    app.use('/api/roles', roleRoutes);
+    app.use('/api/access-levels', accessLevelRoutes);
 
     // Start the server
     app.listen(PORT, () => {

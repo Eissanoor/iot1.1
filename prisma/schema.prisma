@@ -136,11 +136,46 @@ model VibrationSensor {
   timestamp      DateTime @default(now())
 }
 
+// Role model
+model Role {
+  id            Int      @id @default(autoincrement())
+  name          String
+  status        String
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  employees     EmployeeList[] // One-to-many relationship with EmployeeList
+  
+  accessLevelId Int?
+  accessLevel   AccessLevel? @relation(fields: [accessLevelId], references: [id])
+}
+
+// AccessLevel model
+model AccessLevel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  roles     Role[] // One-to-many relationship with Role
+}
+
 // Employee List model
 model EmployeeList {
   id           Int      @id @default(autoincrement())
-  employeeName String
-  jobType      String
+  employeeName String?  // Keeping for backward compatibility
+  jobType      String?  // Keeping for backward compatibility
+  firstName    String
+  lastName     String
+  email        String
+  image        String?  // Path to the image file
+  jobTitle     String
+  status       String
+  joiningDate  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -149,6 +184,9 @@ model EmployeeList {
 
   departmentId  Int?
   department    Department? @relation(fields: [departmentId], references: [id])
+  
+  roleId        Int?
+  role          Role? @relation(fields: [roleId], references: [id])
 }
 
 // Asset model

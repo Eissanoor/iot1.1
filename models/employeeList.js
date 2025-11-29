@@ -14,6 +14,7 @@ class EmployeeList {
     return prisma.employeeList.findMany({
       include: {
         department: true, // include related department if any
+        role: true, // include related role if any
       },
     });
   }
@@ -24,6 +25,7 @@ class EmployeeList {
       where: { id: Number(id) },
       include: {
         department: true,
+        role: true,
       },
     });
   }

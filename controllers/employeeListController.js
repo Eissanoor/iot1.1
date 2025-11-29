@@ -1,24 +1,52 @@
 const EmployeeList = require('../models/employeeList');
+const path = require('path');
 
 // Create a new employee
 exports.createEmployee = async (req, res) => {
   try {
-    const { employeeName, jobType, departmentId } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      departmentId, 
+      roleId, 
+      jobTitle, 
+      status, 
+      joiningDate,
+      employeeName, // Keeping for backward compatibility
+      jobType // Keeping for backward compatibility
+    } = req.body;
 
-    // Validate input
-    if (!employeeName || !jobType) {
+    // Validate required input
+    if (!firstName || !lastName || !email || !jobTitle || !status) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Employee name and job type are required' 
+        message: 'firstName, lastName, email, jobTitle, and status are required' 
       });
     }
 
-    const employee = await EmployeeList.create({
-      employeeName,
-      jobType,
-      // departmentId is optional; only set if provided
+    // Handle image upload
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `/uploads/${req.file.filename}`;
+    }
+
+    // Prepare employee data
+    const employeeData = {
+      firstName,
+      lastName,
+      email,
+      jobTitle,
+      status,
+      ...(imagePath ? { image: imagePath } : {}),
+      ...(joiningDate ? { joiningDate: new Date(joiningDate) } : {}),
       ...(departmentId ? { departmentId: Number(departmentId) } : {}),
-    });
+      ...(roleId ? { roleId: Number(roleId) } : {}),
+      ...(employeeName ? { employeeName } : {}),
+      ...(jobType ? { jobType } : {}),
+    };
+
+    const employee = await EmployeeList.create(employeeData);
 
     return res.status(201).json({
       success: true,
@@ -87,7 +115,18 @@ exports.getEmployeeById = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { employeeName, jobType, departmentId } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      departmentId, 
+      roleId, 
+      jobTitle, 
+      status, 
+      joiningDate,
+      employeeName, // Keeping for backward compatibility
+      jobType // Keeping for backward compatibility
+    } = req.body;
     
     // Check if employee exists
     const existingEmployee = await EmployeeList.findById(id);
@@ -99,17 +138,29 @@ exports.updateEmployee = async (req, res) => {
       });
     }
     
+    // Handle image upload
+    let imagePath = existingEmployee.image;
+    if (req.file) {
+      imagePath = `/uploads/${req.file.filename}`;
+    }
+    
+    // Prepare update data
+    const updateData = {
+      firstName: firstName !== undefined ? firstName : existingEmployee.firstName,
+      lastName: lastName !== undefined ? lastName : existingEmployee.lastName,
+      email: email !== undefined ? email : existingEmployee.email,
+      jobTitle: jobTitle !== undefined ? jobTitle : existingEmployee.jobTitle,
+      status: status !== undefined ? status : existingEmployee.status,
+      image: imagePath,
+      ...(joiningDate !== undefined ? { joiningDate: joiningDate ? new Date(joiningDate) : null } : {}),
+      ...(departmentId !== undefined ? { departmentId: departmentId ? Number(departmentId) : null } : {}),
+      ...(roleId !== undefined ? { roleId: roleId ? Number(roleId) : null } : {}),
+      ...(employeeName !== undefined ? { employeeName } : {}),
+      ...(jobType !== undefined ? { jobType } : {}),
+    };
+    
     // Update employee
-    const updatedEmployee = await EmployeeList.update(id, {
-      employeeName: employeeName || existingEmployee.employeeName,
-      jobType: jobType || existingEmployee.jobType,
-      departmentId:
-        departmentId !== undefined
-          ? departmentId === null
-            ? null
-            : Number(departmentId)
-          : existingEmployee.departmentId,
-    });
+    const updatedEmployee = await EmployeeList.update(id, updateData);
     
     return res.status(200).json({
       success: true,
