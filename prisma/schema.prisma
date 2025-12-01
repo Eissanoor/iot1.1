@@ -103,11 +103,20 @@ model Admin {
   email       String   @unique
   username    String   @unique
   password    String
+  fullName    String?  @db.NVarChar(200)
+  status      String   @default("inactive") @db.NVarChar(20) // inactive, active, pending
   loginOtp    String?
   loginOtpExpiresAt DateTime?
   loginOtpAttempts  Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Relations
+  roleId      Int?
+  role        Role?    @relation(fields: [roleId], references: [id])
+  
+  departmentId Int?
+  department  Department? @relation(fields: [departmentId], references: [id])
 
   member_documents MemberDocument[] @relation("UploadedByAdmin")
   
@@ -175,6 +184,7 @@ model Role {
   
   // Relations
   employees     EmployeeList[] // One-to-many relationship with EmployeeList
+  admins        Admin[] // One-to-many relationship with Admin
   
   accessLevelId Int?
   accessLevel   AccessLevel? @relation(fields: [accessLevelId], references: [id])
@@ -382,6 +392,7 @@ model Department {
 
   // Relations
   employees              EmployeeList[] // One-to-many: one Department has many Employees
+  admins                 Admin[] // One-to-many: one Department has many Admins
   
   hodId                  Int?
   headOfDepartment       HeadOfDepartment? @relation(fields: [hodId], references: [id])

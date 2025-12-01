@@ -25,7 +25,7 @@ class Admin {
   }
   
   // Create new admin
-  static async create({ email, username, password }) {
+  static async create({ email, username, password, fullName, roleId, departmentId, status }) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -34,7 +34,11 @@ class Admin {
       data: {
         email,
         username,
-        password: hashedPassword
+        password: hashedPassword,
+        fullName: fullName || null,
+        roleId: roleId ? parseInt(roleId) : null,
+        departmentId: departmentId ? parseInt(departmentId) : null,
+        status: status || 'inactive'
       }
     });
   }

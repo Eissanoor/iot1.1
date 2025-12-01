@@ -10,12 +10,26 @@ const MAX_OTP_ATTEMPTS = parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS || '5', 1
 // Admin signup controller
 exports.signup = async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const { fullName, email, password, confirmPassword, roleId, departmentId } = req.body;
     
     // Validate input
-    if (!email || !username || !password) {
+    if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({ 
-        error: 'Email, username, and password are required' 
+        error: 'Full name, email, password, and confirm password are required' 
+      });
+    }
+    
+    // Validate password match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ 
+        error: 'Password and confirm password do not match' 
+      });
+    }
+    
+    // Validate password strength (minimum 8 characters)
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 8 characters long' 
       });
     }
     
@@ -27,37 +41,70 @@ exports.signup = async (req, res) => {
       });
     }
     
+    // Generate username from email (before @ symbol) or use email
+    let username = email.split('@')[0];
+    
     // Check if username already exists
     const existingUsername = await Admin.findByUsername(username);
     if (existingUsername) {
-      return res.status(400).json({ 
-        error: 'Username already taken' 
-      });
+      // If username exists, append a number
+      let counter = 1;
+      let newUsername = `${username}${counter}`;
+      while (await Admin.findByUsername(newUsername)) {
+        counter++;
+        newUsername = `${username}${counter}`;
+      }
+      username = newUsername;
     }
     
-    // Create new admin
+    // Validate roleId if provided
+    const prisma = require('../prisma/client');
+    if (roleId) {
+      const role = await prisma.role.findUnique({
+        where: { id: parseInt(roleId) }
+      });
+      if (!role) {
+        return res.status(400).json({ 
+          error: 'Invalid role ID' 
+        });
+      }
+    }
+    
+    // Validate departmentId if provided
+    if (departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: parseInt(departmentId) }
+      });
+      if (!department) {
+        return res.status(400).json({ 
+          error: 'Invalid department ID' 
+        });
+      }
+    }
+    
+    // Create new admin with inactive status (waiting for approval)
     const admin = await Admin.create({
       email,
       username,
-      password
+      password,
+      fullName,
+      roleId: roleId || null,
+      departmentId: departmentId || null,
+      status: 'inactive' // Default to inactive, waiting for approval
     });
     
-    // Create JWT token
-    const token = jwt.sign(
-      { adminId: admin.id, email: admin.email, role: 'admin' },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-    
-    // Return admin info (excluding password) and token
+    // Return admin info (excluding password) - NO TOKEN since they need approval
     res.status(201).json({
-      message: 'Admin created successfully',
+      message: 'Admin registration submitted successfully. Your account is pending approval.',
       admin: {
         id: admin.id,
         email: admin.email,
-        username: admin.username
-      },
-      token
+        username: admin.username,
+        fullName: admin.fullName,
+        status: admin.status,
+        roleId: admin.roleId,
+        departmentId: admin.departmentId
+      }
     });
   } catch (error) {
     console.error('Error during admin signup:', error);
@@ -90,6 +137,13 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ 
         error: 'Invalid credentials' 
+      });
+    }
+    
+    // Check if admin account is active
+    if (admin.status !== 'active') {
+      return res.status(403).json({ 
+        error: 'Your account is pending approval. Please wait for administrator approval.' 
       });
     }
     
