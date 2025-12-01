@@ -61,6 +61,7 @@ const roleRoutes = require('./routes/roleRoutes');
 const accessLevelRoutes = require('./routes/accessLevelRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
 const permissionCategoryRoutes = require('./routes/permissionCategoryRoutes');
+const cityRoutes = require('./routes/cityRoutes');
 
 // Initialize Express app
 const app = express();
@@ -165,6 +166,7 @@ async function startServer() {
     app.use('/api/access-levels', accessLevelRoutes);
     app.use('/api/permissions', permissionRoutes);
     app.use('/api/permission-categories', permissionCategoryRoutes);
+    app.use('/api/cities', cityRoutes);
 
     // Start the server
     app.listen(PORT, () => {
