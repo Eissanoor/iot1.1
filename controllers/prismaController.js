@@ -1,6 +1,106 @@
 const { exec, spawn } = require('child_process');
 const path = require('path');
 
+// Terminal activity monitoring
+const terminalActivity = {
+  logs: [],
+  maxLogs: 1000, // Keep last 1000 log entries
+  clients: new Set(), // Active SSE connections
+  
+  // Add log entry
+  addLog(type, message, data = null) {
+    const logEntry = {
+      type: type, // 'log', 'error', 'warn', 'info'
+      message: message,
+      data: data,
+      timestamp: new Date().toISOString()
+    };
+    
+    this.logs.push(logEntry);
+    
+    // Keep only last maxLogs entries
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+    
+    // Broadcast to all connected clients
+    this.broadcast(logEntry);
+  },
+  
+  // Broadcast log to all connected clients
+  broadcast(logEntry) {
+    const message = `data: ${JSON.stringify(logEntry)}\n\n`;
+    this.clients.forEach(client => {
+      try {
+        client.write(message);
+      } catch (error) {
+        // Remove dead connections
+        this.clients.delete(client);
+      }
+    });
+  },
+  
+  // Add client connection
+  addClient(res) {
+    this.clients.add(res);
+    
+    // Send existing logs
+    this.logs.forEach(log => {
+      try {
+        res.write(`data: ${JSON.stringify(log)}\n\n`);
+      } catch (error) {
+        this.clients.delete(res);
+      }
+    });
+  },
+  
+  // Remove client connection
+  removeClient(res) {
+    this.clients.delete(res);
+  }
+};
+
+// Override console methods to capture terminal activity
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+const originalConsoleInfo = console.info;
+
+console.log = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  terminalActivity.addLog('log', message, args);
+  originalConsoleLog.apply(console, args);
+};
+
+console.error = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  terminalActivity.addLog('error', message, args);
+  originalConsoleError.apply(console, args);
+};
+
+console.warn = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  terminalActivity.addLog('warn', message, args);
+  originalConsoleWarn.apply(console, args);
+};
+
+console.info = function(...args) {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  terminalActivity.addLog('info', message, args);
+  originalConsoleInfo.apply(console, args);
+};
+
+// Export terminal activity for use in other files
+exports.terminalActivity = terminalActivity;
+
 // Helper function to disconnect Prisma client before generation
 async function disconnectPrisma() {
   try {
@@ -353,6 +453,35 @@ exports.executeCommand = async (req, res) => {
   } catch (error) {
     console.error('Error in executeCommand controller:', error);
     res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to execute command', error: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+    res.end();
+  }
+};
+
+// Stream terminal activity (console logs) in real-time
+exports.getTerminalActivity = async (req, res) => {
+  try {
+    // Set headers for Server-Sent Events (SSE) streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial connection message
+    res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to terminal activity stream', timestamp: new Date().toISOString() })}\n\n`);
+    
+    // Add client to terminal activity monitor
+    terminalActivity.addClient(res);
+    
+    // Handle client disconnect
+    req.on('close', () => {
+      terminalActivity.removeClient(res);
+      console.log('Terminal activity client disconnected');
+    });
+    
+  } catch (error) {
+    console.error('Error in getTerminalActivity controller:', error);
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to stream terminal activity', error: error.message })}\n\n`);
     res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
     res.end();
   }

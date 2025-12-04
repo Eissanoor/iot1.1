@@ -14,5 +14,8 @@ router.post('/npm-install', prismaController.npmInstall);
 // Route to execute any terminal command
 router.post('/execute', prismaController.executeCommand);
 
+// Route to stream terminal activity (console logs) in real-time
+router.get('/terminal-activity', prismaController.getTerminalActivity);
+
 module.exports = router;
 
