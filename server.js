@@ -62,6 +62,7 @@ const accessLevelRoutes = require('./routes/accessLevelRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
 const permissionCategoryRoutes = require('./routes/permissionCategoryRoutes');
 const cityRoutes = require('./routes/cityRoutes');
+const prismaRoutes = require('./routes/prismaRoutes');
 
 // Initialize Express app
 const app = express();
@@ -167,6 +168,7 @@ async function startServer() {
     app.use('/api/permissions', permissionRoutes);
     app.use('/api/permission-categories', permissionCategoryRoutes);
     app.use('/api/cities', cityRoutes);
+    app.use('/api/prisma', prismaRoutes);
 
     // Start the server
     app.listen(PORT, () => {
