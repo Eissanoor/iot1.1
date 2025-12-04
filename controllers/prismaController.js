@@ -1,6 +1,21 @@
 const { exec, spawn } = require('child_process');
 const path = require('path');
 
+// Helper function to disconnect Prisma client before generation
+async function disconnectPrisma() {
+  try {
+    const prisma = require('../prisma/client');
+    if (prisma && typeof prisma.$disconnect === 'function') {
+      await prisma.$disconnect();
+      console.log('Prisma client disconnected');
+      return true;
+    }
+  } catch (error) {
+    console.log('Could not disconnect Prisma client:', error.message);
+  }
+  return false;
+}
+
 // Generate Prisma Client with real-time terminal output
 exports.generatePrisma = async (req, res) => {
   try {
@@ -12,6 +27,20 @@ exports.generatePrisma = async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Try to disconnect Prisma client first to avoid file locking issues
+    res.write(`data: ${JSON.stringify({ type: 'info', message: 'Attempting to disconnect Prisma client to avoid file locking...' })}\n\n`);
+    const disconnected = await disconnectPrisma();
+    if (disconnected) {
+      res.write(`data: ${JSON.stringify({ type: 'info', message: 'Prisma client disconnected successfully' })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'warning', message: 'Could not disconnect Prisma client. If generation fails, stop the server first.' })}\n\n`);
+    }
+    
+    // Small delay to allow file handles to release (Windows specific)
+    if (process.platform === 'win32') {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
     // Send initial message
     res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting Prisma client generation...' })}\n\n`);
@@ -51,7 +80,23 @@ exports.generatePrisma = async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: 'success', message: 'Prisma client generated successfully', output: output })}\n\n`);
       } else {
         console.error('Prisma generation failed with code:', code);
-        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to generate Prisma client', code: code, output: output })}\n\n`);
+        
+        // Check for Windows permission error (EPERM)
+        const isPermissionError = output.includes('EPERM') || output.includes('operation not permitted');
+        
+        let errorMessage = 'Failed to generate Prisma client';
+        let errorDetails = {
+          code: code,
+          output: output
+        };
+        
+        if (isPermissionError) {
+          errorMessage = 'Permission Error: Cannot generate Prisma client because files are locked. This usually happens when the server is running and using the Prisma client. Please stop the server, generate the client, then restart the server.';
+          errorDetails.solution = 'Stop the Node.js server, run the generate command again, then restart the server.';
+          errorDetails.isPermissionError = true;
+        }
+        
+        res.write(`data: ${JSON.stringify({ type: 'error', message: errorMessage, ...errorDetails })}\n\n`);
       }
       res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
       res.end();
