@@ -458,7 +458,38 @@ exports.executeCommand = async (req, res) => {
   }
 };
 
-// Stream terminal activity (console logs) in real-time
+// Get terminal activity logs (for Postman/regular HTTP requests)
+exports.getTerminalLogs = async (req, res) => {
+  try {
+    const { limit = 100, type } = req.query;
+    
+    let logs = terminalActivity.logs;
+    
+    // Filter by type if provided
+    if (type) {
+      logs = logs.filter(log => log.type === type);
+    }
+    
+    // Get last N logs
+    const limitedLogs = logs.slice(-parseInt(limit));
+    
+    return res.status(200).json({
+      success: true,
+      count: limitedLogs.length,
+      total: terminalActivity.logs.length,
+      data: limitedLogs
+    });
+  } catch (error) {
+    console.error('Error in getTerminalLogs controller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get terminal logs',
+      error: error.message
+    });
+  }
+};
+
+// Stream terminal activity (console logs) in real-time (for browser/SSE clients)
 exports.getTerminalActivity = async (req, res) => {
   try {
     // Set headers for Server-Sent Events (SSE) streaming
@@ -466,17 +497,35 @@ exports.getTerminalActivity = async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering
     
     // Send initial connection message
     res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to terminal activity stream', timestamp: new Date().toISOString() })}\n\n`);
+    
+    // Send a keep-alive comment every 30 seconds
+    const keepAliveInterval = setInterval(() => {
+      try {
+        res.write(': keep-alive\n\n');
+      } catch (error) {
+        clearInterval(keepAliveInterval);
+        terminalActivity.removeClient(res);
+      }
+    }, 30000);
     
     // Add client to terminal activity monitor
     terminalActivity.addClient(res);
     
     // Handle client disconnect
     req.on('close', () => {
+      clearInterval(keepAliveInterval);
       terminalActivity.removeClient(res);
       console.log('Terminal activity client disconnected');
+    });
+    
+    // Handle request abort
+    req.on('aborted', () => {
+      clearInterval(keepAliveInterval);
+      terminalActivity.removeClient(res);
     });
     
   } catch (error) {
