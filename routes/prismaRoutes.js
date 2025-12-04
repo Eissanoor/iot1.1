@@ -8,5 +8,11 @@ router.post('/generate', prismaController.generatePrisma);
 // Route to git pull from main branch
 router.post('/git-pull', prismaController.gitPull);
 
+// Route to npm install
+router.post('/npm-install', prismaController.npmInstall);
+
+// Route to execute any terminal command
+router.post('/execute', prismaController.executeCommand);
+
 module.exports = router;
 

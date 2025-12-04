@@ -1,77 +1,315 @@
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const path = require('path');
 
-// Generate Prisma Client
+// Generate Prisma Client with real-time terminal output
 exports.generatePrisma = async (req, res) => {
   try {
     // Get the project root directory
     const projectRoot = path.join(__dirname, '..');
     
-    // Execute npx prisma generate command
-    exec('npx prisma generate', { cwd: projectRoot }, (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error generating Prisma client:', error);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to generate Prisma client',
-          error: error.message,
-          stderr: stderr
-        });
-      }
-
-      console.log('Prisma client generated successfully');
-      console.log('Output:', stdout);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Prisma client generated successfully',
-        output: stdout
-      });
+    // Set headers for Server-Sent Events (SSE) streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial message
+    res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting Prisma client generation...' })}\n\n`);
+    
+    // Execute npx prisma generate command with spawn for real-time output
+    const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+    const args = ['prisma', 'generate'];
+    
+    const childProcess = spawn(command, args, {
+      cwd: projectRoot,
+      shell: true,
+      stdio: ['inherit', 'pipe', 'pipe']
     });
+    
+    let output = '';
+    
+    // Stream stdout
+    childProcess.stdout.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.log('Prisma stdout:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stdout', data: text })}\n\n`);
+    });
+    
+    // Stream stderr
+    childProcess.stderr.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.error('Prisma stderr:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stderr', data: text })}\n\n`);
+    });
+    
+    // Handle process completion
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('Prisma client generated successfully');
+        res.write(`data: ${JSON.stringify({ type: 'success', message: 'Prisma client generated successfully', output: output })}\n\n`);
+      } else {
+        console.error('Prisma generation failed with code:', code);
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to generate Prisma client', code: code, output: output })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
+    // Handle process errors
+    childProcess.on('error', (error) => {
+      console.error('Error generating Prisma client:', error);
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to generate Prisma client', error: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
   } catch (error) {
     console.error('Error in generatePrisma controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to generate Prisma client',
-      error: error.message
-    });
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to generate Prisma client', error: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+    res.end();
   }
 };
 
-// Git pull from main branch
+// Git pull from main branch with real-time terminal output
 exports.gitPull = async (req, res) => {
   try {
     // Get the project root directory
     const projectRoot = path.join(__dirname, '..');
     
-    // Execute git pull origin main command
-    exec('git pull origin main', { cwd: projectRoot }, (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error pulling from git:', error);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to pull from git main branch',
-          error: error.message,
-          stderr: stderr
-        });
-      }
-
-      console.log('Git pull completed successfully');
-      console.log('Output:', stdout);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Git pull from main branch completed successfully',
-        output: stdout
-      });
+    // Set headers for Server-Sent Events (SSE) streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial message
+    res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting git pull from main branch...' })}\n\n`);
+    
+    // Execute git pull origin main command with spawn for real-time output
+    const command = process.platform === 'win32' ? 'git' : 'git';
+    const args = ['pull', 'origin', 'main'];
+    
+    const childProcess = spawn(command, args, {
+      cwd: projectRoot,
+      shell: true,
+      stdio: ['inherit', 'pipe', 'pipe']
     });
+    
+    let output = '';
+    
+    // Stream stdout
+    childProcess.stdout.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.log('Git stdout:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stdout', data: text })}\n\n`);
+    });
+    
+    // Stream stderr
+    childProcess.stderr.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.error('Git stderr:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stderr', data: text })}\n\n`);
+    });
+    
+    // Handle process completion
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('Git pull completed successfully');
+        res.write(`data: ${JSON.stringify({ type: 'success', message: 'Git pull from main branch completed successfully', output: output })}\n\n`);
+      } else {
+        console.error('Git pull failed with code:', code);
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to pull from git main branch', code: code, output: output })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
+    // Handle process errors
+    childProcess.on('error', (error) => {
+      console.error('Error pulling from git:', error);
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to pull from git main branch', error: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
   } catch (error) {
     console.error('Error in gitPull controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to pull from git main branch',
-      error: error.message
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to pull from git main branch', error: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+    res.end();
+  }
+};
+
+// NPM install with real-time terminal output
+exports.npmInstall = async (req, res) => {
+  try {
+    // Get the project root directory
+    const projectRoot = path.join(__dirname, '..');
+    
+    // Set headers for Server-Sent Events (SSE) streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial message
+    res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting npm install...' })}\n\n`);
+    
+    // Execute npm install command with spawn for real-time output
+    const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const args = ['install'];
+    
+    const childProcess = spawn(command, args, {
+      cwd: projectRoot,
+      shell: true,
+      stdio: ['inherit', 'pipe', 'pipe']
     });
+    
+    let output = '';
+    
+    // Stream stdout
+    childProcess.stdout.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.log('NPM stdout:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stdout', data: text })}\n\n`);
+    });
+    
+    // Stream stderr
+    childProcess.stderr.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.error('NPM stderr:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stderr', data: text })}\n\n`);
+    });
+    
+    // Handle process completion
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('NPM install completed successfully');
+        res.write(`data: ${JSON.stringify({ type: 'success', message: 'NPM install completed successfully', output: output })}\n\n`);
+      } else {
+        console.error('NPM install failed with code:', code);
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to run npm install', code: code, output: output })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
+    // Handle process errors
+    childProcess.on('error', (error) => {
+      console.error('Error running npm install:', error);
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to run npm install', error: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
+  } catch (error) {
+    console.error('Error in npmInstall controller:', error);
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to run npm install', error: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+    res.end();
+  }
+};
+
+// General terminal command execution with real-time output
+exports.executeCommand = async (req, res) => {
+  try {
+    const { command, args, cwd } = req.body;
+    
+    // Validate command
+    if (!command) {
+      return res.status(400).json({
+        success: false,
+        message: 'Command is required'
+      });
+    }
+    
+    // Get the project root directory or use provided cwd
+    const projectRoot = cwd || path.join(__dirname, '..');
+    
+    // Set headers for Server-Sent Events (SSE) streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial message
+    const commandString = args && args.length > 0 
+      ? `${command} ${args.join(' ')}` 
+      : command;
+    res.write(`data: ${JSON.stringify({ type: 'start', message: `Starting command: ${commandString}` })}\n\n`);
+    
+    // Parse command and arguments
+    let executableCommand = command;
+    let commandArgs = args || [];
+    
+    // Handle Windows vs Unix commands
+    if (process.platform === 'win32') {
+      // For Windows, use cmd.exe for shell commands
+      if (command.includes(' ') || !command.includes('\\') && !command.includes('/')) {
+        // It's a shell command, use cmd
+        executableCommand = 'cmd';
+        commandArgs = ['/c', command, ...commandArgs];
+      }
+    }
+    
+    // Execute command with spawn for real-time output
+    const childProcess = spawn(executableCommand, commandArgs, {
+      cwd: projectRoot,
+      shell: true,
+      stdio: ['inherit', 'pipe', 'pipe']
+    });
+    
+    let output = '';
+    
+    // Stream stdout
+    childProcess.stdout.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.log('Terminal stdout:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stdout', data: text, timestamp: new Date().toISOString() })}\n\n`);
+    });
+    
+    // Stream stderr
+    childProcess.stderr.on('data', (data) => {
+      const text = data.toString();
+      output += text;
+      console.error('Terminal stderr:', text);
+      res.write(`data: ${JSON.stringify({ type: 'stderr', data: text, timestamp: new Date().toISOString() })}\n\n`);
+    });
+    
+    // Handle process completion
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('Command executed successfully');
+        res.write(`data: ${JSON.stringify({ type: 'success', message: 'Command executed successfully', exitCode: code, output: output })}\n\n`);
+      } else {
+        console.error('Command failed with code:', code);
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Command execution failed', exitCode: code, output: output })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'end', exitCode: code })}\n\n`);
+      res.end();
+    });
+    
+    // Handle process errors
+    childProcess.on('error', (error) => {
+      console.error('Error executing command:', error);
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to execute command', error: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+      res.end();
+    });
+    
+  } catch (error) {
+    console.error('Error in executeCommand controller:', error);
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to execute command', error: error.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+    res.end();
   }
 };
 
