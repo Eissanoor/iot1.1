@@ -63,6 +63,7 @@ const permissionRoutes = require('./routes/permissionRoutes');
 const permissionCategoryRoutes = require('./routes/permissionCategoryRoutes');
 const cityRoutes = require('./routes/cityRoutes');
 const prismaRoutes = require('./routes/prismaRoutes');
+const { scheduleWeeklyBackup } = require('./services/backupService');
 
 // Initialize Express app
 const app = express();
@@ -169,6 +170,9 @@ async function startServer() {
     app.use('/api/permission-categories', permissionCategoryRoutes);
     app.use('/api/cities', cityRoutes);
     app.use('/api/prisma', prismaRoutes);
+
+    // Schedule weekly database backups (local + Google Drive)
+    scheduleWeeklyBackup();
 
     // Start the server
     app.listen(PORT, () => {

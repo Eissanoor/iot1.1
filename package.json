@@ -11,6 +11,7 @@
     "seed-db": "node seed-db.js",
     "seed-users": "node seed-users.js",
     "check-db-url": "node check-db-url.js",
+    "check-backup-path": "node check-backup-path.js",
     "migrate-data": "node migrate-data.js",
     "studio": "npx prisma studio"
   },
@@ -36,7 +37,8 @@
     "nodemailer": "^7.0.5",
     "pdfkit": "^0.17.2",
     "prisma": "^6.12.0",
-    "puppeteer": "^22.0.0"
+    "puppeteer": "^22.0.0",
+    "googleapis": "^142.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

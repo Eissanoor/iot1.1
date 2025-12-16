@@ -8,6 +8,7 @@ const SoilMoisture = require('../models/soilMoistureData');
 const FuelLevel = require('../models/fuelLevelData');
 const VibrationSensor = require('../models/vibrationSensorData');
 const NPKSensor = require('../models/npkSensorData');
+const { runDatabaseBackup } = require('../services/backupService');
 
 // Collection configuration
 const collectionsConfig = {
@@ -156,6 +157,29 @@ router.put('/cleanup/config', async (req, res) => {
   } catch (error) {
     console.error('Error updating cleanup configuration:', error);
     res.status(500).json({ error: 'Error updating cleanup configuration' });
+  }
+});
+
+// Route to trigger an immediate database backup
+router.post('/backup/run', async (req, res) => {
+  try {
+    const result = await runDatabaseBackup();
+    if (result?.skipped) {
+      return res.status(200).json({
+        message: 'Backup skipped',
+        reason: result.reason || 'disabled',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Backup completed',
+      backupFileName: result.backupFileName,
+      backupPath: result.backupPath,
+      driveFile: result.driveFile,
+    });
+  } catch (error) {
+    console.error('Error running manual backup:', error);
+    res.status(500).json({ error: 'Backup failed', details: error.message });
   }
 });
 

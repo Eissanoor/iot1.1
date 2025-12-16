@@ -61,6 +61,24 @@ A Node.js server for collecting, storing, and retrieving IoT sensor data for tem
    npm run seed-db
    ```
 
+## Weekly Database Backups (Google Drive)
+
+- The server now creates a weekly `.bak` file and uploads it to Google Drive using a service account.
+- Environment variables to add to your `.env` (add near your other settings, e.g., lines ~14-15):
+  ```
+  # Database backup scheduling
+  DB_BACKUP_ENABLED=true
+  DB_BACKUP_CRON=0 3 * * 1   # Every Monday at 03:00 UTC
+  DB_BACKUP_TZ=UTC
+
+  # Google Drive service account (share the target folder with this account)
+  GOOGLE_DRIVE_CLIENT_EMAIL=service-account@your-project.iam.gserviceaccount.com
+  GOOGLE_DRIVE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+  GOOGLE_DRIVE_BACKUP_FOLDER_ID=your_drive_folder_id   # optional; uploads to root if omitted
+  ```
+- The backup file is first written to the local `backups/` folder, then uploaded. Ensure the SQL Server service account has write access to that folder.
+- Adjust `DB_BACKUP_CRON` if you need a different schedule (cron syntax). Set `DB_BACKUP_ENABLED=false` to disable scheduling.
+
 ## Running the Server
 
 Start the server:
