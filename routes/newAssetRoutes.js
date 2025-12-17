@@ -3,6 +3,7 @@ const router = express.Router();
 const newAssetController = require('../controllers/newAssetController');
 
 // Create a new asset with image upload
+// Expects multipart/form-data with 'image' as file field
 router.post(
   '/',
   newAssetController.uploadNewAssetImage,
@@ -16,6 +17,7 @@ router.get('/', newAssetController.getAllNewAssets);
 router.get('/:id', newAssetController.getNewAssetById);
 
 // Update asset with optional image upload
+// Expects multipart/form-data with 'image' as file field
 router.put(
   '/:id',
   newAssetController.uploadNewAssetImage,
