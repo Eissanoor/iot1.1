@@ -63,13 +63,9 @@ const permissionRoutes = require('./routes/permissionRoutes');
 const permissionCategoryRoutes = require('./routes/permissionCategoryRoutes');
 const cityRoutes = require('./routes/cityRoutes');
 const prismaRoutes = require('./routes/prismaRoutes');
-<<<<<<< HEAD
-const { scheduleWeeklyBackup } = require('./services/backupService');
-=======
 const assetBrandRoutes = require('./routes/assetBrandRoutes');
 const assetCategoryRoutes = require('./routes/assetCategoryRoutes');
 const newAssetRoutes = require('./routes/newAssetRoutes');
->>>>>>> e98721fbb15616d41801116aa805cfd5f2b2b031
 
 // Initialize Express app
 const app = express();
@@ -179,9 +175,6 @@ async function startServer() {
     app.use('/api/asset-brands', assetBrandRoutes);
     app.use('/api/asset-categories', assetCategoryRoutes);
     app.use('/api/new-assets', newAssetRoutes);
-
-    // Schedule weekly database backups (local + Google Drive)
-    scheduleWeeklyBackup();
 
     // Start the server
     app.listen(PORT, () => {
