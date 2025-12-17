@@ -337,6 +337,10 @@ const createSqlServerBackup = async () => {
       // Path check failed - check if we should use default path instead
       if (defaultBackupPath && dirPath !== defaultBackupPath) {
         console.warn(`[DB BACKUP] Custom path ${dirPath} is not accessible.`);
+        console.warn(`[DB BACKUP] SQL Server instance: ${serverInfo.ServerName || 'Unknown'}`);
+        console.warn(`[DB BACKUP] Make sure the SQL Server service account has Full Control permissions on the folder.`);
+        console.warn(`[DB BACKUP] For SQLEXPRESS instance, grant permissions to: NT Service\\MSSQL$SQLEXPRESS`);
+        console.warn(`[DB BACKUP] For MSSQLSERVER instance, grant permissions to: NT Service\\MSSQLSERVER`);
         console.warn(`[DB BACKUP] Falling back to SQL Server default backup path: ${defaultBackupPath}`);
         
         // Use the default backup path instead
