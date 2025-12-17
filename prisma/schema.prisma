@@ -236,6 +236,7 @@ model EmployeeList {
   
   // Relations
   transferAssets TransferAsset[] // One-to-many relationship with TransferAsset
+  newAssets      NewAsset[] // One-to-many relationship with NewAsset
 
   departmentId  Int?
   department    Department? @relation(fields: [departmentId], references: [id])
@@ -317,6 +318,7 @@ model Location {
   locationCode String    @unique
   assets       Asset[]   // One-to-many relationship with Asset
   manageLocations ManageLocation[] // One-to-many relationship with ManageLocation
+  newAssets    NewAsset[] // One-to-many relationship with NewAsset
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -365,6 +367,9 @@ model AssetCondition {
   status      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  newAssets   NewAsset[] // One-to-many relationship with NewAsset
 }
 
 // HeadOfDepartment model
@@ -394,6 +399,7 @@ model Department {
   employees              EmployeeList[] // One-to-many: one Department has many Employees
   admins                 Admin[] // One-to-many: one Department has many Admins
   cities                 City[] // Many-to-many: one Department can belong to many Cities
+  newAssets              NewAsset[] // One-to-many relationship with NewAsset
   
   hodId                  Int?
   headOfDepartment       HeadOfDepartment? @relation(fields: [hodId], references: [id])
@@ -863,4 +869,66 @@ model Heading {
   caption_ar String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// AssetBrand model
+model AssetBrand {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  status              Boolean  @default(true)
+  logo                String?  // Path or URL to the brand logo
+  category            String?  // Simple text field, no relation
+  supplier            String?
+  website             String?
+  contactInformation  String?
+  relaibiblityScore   Float?   // Numeric score representing reliability
+  description         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// AssetCategory model
+model AssetCategory {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  status             Boolean  @default(true)
+  description        String?
+  defultDepartment   String?  // Note: spelling kept as requested
+  mantenanceInterval String?  // e.g. "monthly", "90 days"
+  categoryIcon       String?  // Path or URL to icon image
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  newAssets          NewAsset[] // One-to-many relationship with NewAsset
+}
+
+// NewAsset model
+model NewAsset {
+  id               Int             @id @default(autoincrement())
+  name             String
+  serialNo         String
+  status           String
+  purchaseDate     DateTime?
+  warrantyExpiry   DateTime?
+  description      String?
+  image            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  assetCategoryId  Int
+  assetCategory    AssetCategory   @relation(fields: [assetCategoryId], references: [id])
+
+  departmentId     Int
+  department       Department      @relation(fields: [departmentId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  employeeId       Int
+  employee         EmployeeList    @relation(fields: [employeeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  assetConditionId Int
+  assetCondition   AssetCondition  @relation(fields: [assetConditionId], references: [id])
+
+  locationId       Int
+  location         Location        @relation(fields: [locationId], references: [id])
 }
