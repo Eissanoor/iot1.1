@@ -183,6 +183,24 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
     // Remove query parameters if present (e.g., ?usp=sharing)
     folderId = folderId.split('?')[0].trim();
   }
+
+  // Verify folder access if folder ID is provided
+  if (folderId) {
+    try {
+      const folderInfo = await drive.files.get({
+        fileId: folderId,
+        fields: 'id, name, mimeType',
+      });
+      console.log(`[DB BACKUP] Verified folder access: ${folderInfo.data.name} (${folderId})`);
+    } catch (folderError) {
+      console.error(`[DB BACKUP] Cannot access folder ${folderId}: ${folderError.message}`);
+      console.error('[DB BACKUP] Please verify:');
+      console.error('[DB BACKUP] 1. The folder is shared with your service account email');
+      console.error('[DB BACKUP] 2. The service account has Editor permissions');
+      console.error('[DB BACKUP] 3. The folder ID is correct');
+      throw new Error(`Folder access denied: ${folderError.message}`);
+    }
+  }
   
   const fileMetadata = {
     name: fileName,
@@ -199,6 +217,7 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
       resource: fileMetadata,
       media,
       fields: 'id, name, webViewLink',
+      supportsAllDrives: true, // Important for shared drives
     });
 
     return response.data;
@@ -218,6 +237,19 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
       console.error('[DB BACKUP] 3. The service account has Editor permissions on the folder');
       console.error('[DB BACKUP] Example: GOOGLE_DRIVE_BACKUP_FOLDER_ID=1PkekRd_RIdMLm8yeXjA8rhv_y1U1CYS6');
       console.error('[DB BACKUP] (Not the full URL: https://drive.google.com/drive/folders/...)');
+      console.error('[DB BACKUP] Backup file was created successfully, but upload failed');
+    } else if (error.message?.includes('storage quota') || error.message?.includes('Service Accounts do not have storage')) {
+      console.error(`[DB BACKUP] Google Drive upload failed: ${error.message}`);
+      console.error('[DB BACKUP] Service accounts cannot have their own storage. The folder must be:');
+      console.error('[DB BACKUP] 1. Created in YOUR personal Google Drive (not the service account\'s drive)');
+      console.error('[DB BACKUP] 2. Shared with your service account email (Editor permissions)');
+      console.error('[DB BACKUP] 3. The folder ID must point to a folder in your personal Drive that is shared with the service account');
+      console.error('[DB BACKUP] Steps to fix:');
+      console.error('[DB BACKUP] - Go to YOUR Google Drive (your personal account)');
+      console.error('[DB BACKUP] - Create or use an existing folder');
+      console.error('[DB BACKUP] - Share it with: ' + (process.env.GOOGLE_DRIVE_CLIENT_EMAIL || 'your-service-account@...'));
+      console.error('[DB BACKUP] - Give Editor permissions');
+      console.error('[DB BACKUP] - Use that folder\'s ID in GOOGLE_DRIVE_BACKUP_FOLDER_ID');
       console.error('[DB BACKUP] Backup file was created successfully, but upload failed');
     } else {
       console.error(`[DB BACKUP] Google Drive upload failed: ${error.message}`);
