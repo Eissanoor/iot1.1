@@ -127,7 +127,12 @@ const getDriveClient = () => {
     : undefined;
 
   if (!clientEmail || !privateKey) {
-    console.warn('[DB BACKUP] Google Drive credentials not set; skipping upload.');
+    const missing = [];
+    if (!clientEmail) missing.push('GOOGLE_DRIVE_CLIENT_EMAIL');
+    if (!privateKey) missing.push('GOOGLE_DRIVE_PRIVATE_KEY');
+    console.warn(`[DB BACKUP] Google Drive credentials not set; skipping upload.`);
+    console.warn(`[DB BACKUP] Missing environment variables: ${missing.join(', ')}`);
+    console.warn(`[DB BACKUP] See docs/google-drive-setup.md for setup instructions.`);
     return null;
   }
 
@@ -166,7 +171,19 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
     return null;
   }
 
-  const folderId = process.env.GOOGLE_DRIVE_BACKUP_FOLDER_ID;
+  // Extract folder ID from URL if a full URL was provided
+  let folderId = process.env.GOOGLE_DRIVE_BACKUP_FOLDER_ID;
+  if (folderId) {
+    // Check if it's a full URL and extract the folder ID
+    const urlMatch = folderId.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    if (urlMatch) {
+      folderId = urlMatch[1];
+      console.log(`[DB BACKUP] Extracted folder ID from URL: ${folderId}`);
+    }
+    // Remove query parameters if present (e.g., ?usp=sharing)
+    folderId = folderId.split('?')[0].trim();
+  }
+  
   const fileMetadata = {
     name: fileName,
     parents: folderId ? [folderId] : undefined,
@@ -192,6 +209,16 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
       console.error('[DB BACKUP] This may be due to an incompatible private key format or Node.js version');
       console.error('[DB BACKUP] Please check your GOOGLE_DRIVE_PRIVATE_KEY format');
       console.error('[DB BACKUP] Backup file was created successfully, but upload was skipped');
+    } else if (error.message?.includes('File not found') || error.code === 404) {
+      console.error(`[DB BACKUP] Google Drive upload failed: ${error.message}`);
+      console.error('[DB BACKUP] The specified folder was not found or is not accessible.');
+      console.error('[DB BACKUP] Please check:');
+      console.error('[DB BACKUP] 1. The GOOGLE_DRIVE_BACKUP_FOLDER_ID is correct (should be just the folder ID, not the full URL)');
+      console.error('[DB BACKUP] 2. The folder was shared with your service account email');
+      console.error('[DB BACKUP] 3. The service account has Editor permissions on the folder');
+      console.error('[DB BACKUP] Example: GOOGLE_DRIVE_BACKUP_FOLDER_ID=1PkekRd_RIdMLm8yeXjA8rhv_y1U1CYS6');
+      console.error('[DB BACKUP] (Not the full URL: https://drive.google.com/drive/folders/...)');
+      console.error('[DB BACKUP] Backup file was created successfully, but upload failed');
     } else {
       console.error(`[DB BACKUP] Google Drive upload failed: ${error.message}`);
       console.error('[DB BACKUP] Backup file was created successfully, but upload failed');

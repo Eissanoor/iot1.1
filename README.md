@@ -64,7 +64,8 @@ A Node.js server for collecting, storing, and retrieving IoT sensor data for tem
 ## Weekly Database Backups (Google Drive)
 
 - The server now creates a weekly `.bak` file and uploads it to Google Drive using a service account.
-- Environment variables to add to your `.env` (add near your other settings, e.g., lines ~14-15):
+- **For detailed setup instructions, see [docs/google-drive-setup.md](docs/google-drive-setup.md)**
+- Environment variables to add to your `.env`:
   ```
   # Database backup scheduling
   DB_BACKUP_ENABLED=true
