@@ -66,6 +66,7 @@ const prismaRoutes = require('./routes/prismaRoutes');
 const assetBrandRoutes = require('./routes/assetBrandRoutes');
 const assetCategoryRoutes = require('./routes/assetCategoryRoutes');
 const newAssetRoutes = require('./routes/newAssetRoutes');
+const newAssetConditionRoutes = require('./routes/newAssetConditionRoutes');
 
 // Initialize Express app
 const app = express();
@@ -175,6 +176,7 @@ async function startServer() {
     app.use('/api/asset-brands', assetBrandRoutes);
     app.use('/api/asset-categories', assetCategoryRoutes);
     app.use('/api/new-assets', newAssetRoutes);
+    app.use('/api/new-asset-conditions', newAssetConditionRoutes);
 
     // Start the server
     app.listen(PORT, () => {
