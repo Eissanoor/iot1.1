@@ -68,6 +68,9 @@ const assetCategoryRoutes = require('./routes/assetCategoryRoutes');
 const newAssetRoutes = require('./routes/newAssetRoutes');
 const newAssetConditionRoutes = require('./routes/newAssetConditionRoutes');
 
+// Import backup service
+const { scheduleWeeklyBackup } = require('./services/backupService');
+
 // Initialize Express app
 const app = express();
 
@@ -118,6 +121,9 @@ async function startServer() {
     // Connect to the database
     await prisma.$connect();
     console.log('Connected to SQL Server database');
+    
+    // Initialize scheduled weekly backup (cron job)
+    scheduleWeeklyBackup();
     
     // API Routes
     app.use('/api/temperature', temperatureRoutes);

@@ -160,7 +160,7 @@ router.put('/cleanup/config', async (req, res) => {
   }
 });
 
-// Route to trigger an immediate database backup
+// Route to trigger an immediate database backup (requires admin auth)
 router.post('/backup/run', async (req, res) => {
   try {
     const result = await runDatabaseBackup();
@@ -179,6 +179,42 @@ router.post('/backup/run', async (req, res) => {
     });
   } catch (error) {
     console.error('Error running manual backup:', error);
+    res.status(500).json({ error: 'Backup failed', details: error.message });
+  }
+});
+
+// Route to trigger backup via API key (for external cron services)
+// Usage: POST /api/admin/backup/trigger?apiKey=YOUR_API_KEY
+router.post('/backup/trigger', async (req, res) => {
+  try {
+    const apiKey = req.query.apiKey || req.headers['x-api-key'];
+    const expectedApiKey = process.env.BACKUP_API_KEY;
+
+    // If API key is set in env, require it; otherwise allow without auth (for local/internal use)
+    if (expectedApiKey && apiKey !== expectedApiKey) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        message: 'Invalid or missing API key. Set BACKUP_API_KEY in .env for security.'
+      });
+    }
+
+    const result = await runDatabaseBackup();
+    if (result?.skipped) {
+      return res.status(200).json({
+        message: 'Backup skipped',
+        reason: result.reason || 'disabled',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Backup completed',
+      backupFileName: result.backupFileName,
+      backupPath: result.backupPath,
+      driveFile: result.driveFile,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error running backup via API:', error);
     res.status(500).json({ error: 'Backup failed', details: error.message });
   }
 });
