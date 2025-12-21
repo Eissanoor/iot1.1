@@ -35,5 +35,8 @@ router.get('/assets-requiring-attention', newAssetConditionController.getAssetsR
 // Get upcoming inspections
 router.get('/upcoming-inspections', newAssetConditionController.getUpcomingInspections);
 
+// Get filter options with counts for filter sidebar
+router.get('/filter-options', newAssetConditionController.getFilterOptions);
+
 module.exports = router;
 

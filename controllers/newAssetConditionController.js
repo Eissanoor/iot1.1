@@ -1355,3 +1355,100 @@ exports.getUpcomingInspections = async (req, res) => {
   }
 };
 
+/**
+ * Get filter options with counts for the filter sidebar
+ * Returns condition statuses and categories with their respective counts
+ */
+exports.getFilterOptions = async (req, res) => {
+  try {
+    // Get all asset conditions
+    const assetConditions = await prisma.assetCondition.findMany({
+      where: { status: true },
+      orderBy: { name: 'asc' }
+    });
+
+    // Get all asset categories
+    const assetCategories = await prisma.assetCategory.findMany({
+      where: { status: true },
+      orderBy: { name: 'asc' }
+    });
+
+    // Get counts for each condition
+    const conditionCounts = await Promise.all(
+      assetConditions.map(async (condition) => {
+        const count = await prisma.newAsset.count({
+          where: {
+            assetConditionId: condition.id
+          }
+        });
+
+        // Determine color based on condition name
+        const conditionName = condition.name.toLowerCase();
+        let color = '#6B7280'; // Default gray
+        if (conditionName.includes('new')) color = '#10B981'; // Green
+        else if (conditionName.includes('good')) color = '#3B82F6'; // Blue
+        else if (conditionName.includes('fair')) color = '#F97316'; // Orange
+        else if (conditionName.includes('damaged')) color = '#EF4444'; // Red
+        else if (conditionName.includes('retired')) color = '#6B7280'; // Gray
+
+        return {
+          id: condition.id,
+          name: condition.name,
+          count: count,
+          color: color,
+          checked: true // Default to checked
+        };
+      })
+    );
+
+    // Get counts for each category
+    const categoryCounts = await Promise.all(
+      assetCategories.map(async (category) => {
+        const count = await prisma.newAsset.count({
+          where: {
+            assetCategoryId: category.id
+          }
+        });
+
+        return {
+          id: category.id,
+          name: category.name,
+          count: count,
+          checked: true // Default to checked
+        };
+      })
+    );
+
+    // Sort conditions by predefined order: New, Good, Fair, Damaged, Retired
+    const conditionOrder = ['new', 'good', 'fair', 'damaged', 'retired'];
+    const sortedConditions = conditionCounts.sort((a, b) => {
+      const aIndex = conditionOrder.findIndex(order => 
+        a.name.toLowerCase().includes(order)
+      );
+      const bIndex = conditionOrder.findIndex(order => 
+        b.name.toLowerCase().includes(order)
+      );
+      
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        conditionStatus: sortedConditions,
+        category: categoryCounts
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching filter options:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch filter options',
+      error: error.message
+    });
+  }
+};
+
