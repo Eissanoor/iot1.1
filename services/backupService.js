@@ -190,6 +190,7 @@ const uploadToGoogleDrive = async (filePath, fileName) => {
       const folderInfo = await drive.files.get({
         fileId: folderId,
         fields: 'id, name, mimeType',
+        supportsAllDrives: true, // Required for accessing shared folders
       });
       console.log(`[DB BACKUP] Verified folder access: ${folderInfo.data.name} (${folderId})`);
     } catch (folderError) {
