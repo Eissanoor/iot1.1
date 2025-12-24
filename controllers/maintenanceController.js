@@ -42,6 +42,29 @@ exports.createMaintenance = async (req, res) => {
       return res.status(400).json({ error: 'Invalid schedule date format' });
     }
     
+    // Get user ID from JWT token or request body
+    let userId;
+    if (req.user && req.user.userId) {
+      userId = req.user.userId;
+    } else if (req.user && req.user.id) {
+      userId = req.user.id;
+    } else if (req.body.userId) {
+      userId = req.body.userId;
+    } else {
+      return res.status(400).json({ 
+        error: 'User ID is required. Please provide authentication token or userId in request body' 
+      });
+    }
+    
+    // Validate user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
     // Create new maintenance record
     const maintenance = await prisma.maintenance.create({
       data: {
@@ -50,7 +73,7 @@ exports.createMaintenance = async (req, res) => {
         scheduleDate: parsedScheduleDate,
         technicianId: parseInt(technicianId),
         note: note || null,
-        userId: req.user.userId // Get user ID from JWT token
+        userId: userId
       },
       include: {
         iotDeviceAsset: {

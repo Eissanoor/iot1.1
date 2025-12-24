@@ -410,4 +410,176 @@ exports.deleteLogMaintenance = async (req, res) => {
   }
 };
 
+// Get dashboard statistics for log maintenance cards
+exports.getLogMaintenanceStats = async (req, res) => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Calculate date ranges
+    const lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    // Active Maintenance: Logs without endDate or endDate in the future
+    const activeMaintenance = await prisma.logMaintenance.count({
+      where: {
+        OR: [
+          { endDate: null },
+          { endDate: { gte: now } }
+        ]
+      }
+    });
+    
+    // Active Maintenance last week (for comparison)
+    const activeMaintenanceLastWeek = await prisma.logMaintenance.count({
+      where: {
+        OR: [
+          { endDate: null },
+          { endDate: { gte: lastWeek } }
+        ],
+        startDate: { lte: lastWeek }
+      }
+    });
+    
+    // Calculate percentage change for Active Maintenance
+    const activeMaintenanceChange = activeMaintenanceLastWeek > 0
+      ? Math.round(((activeMaintenance - activeMaintenanceLastWeek) / activeMaintenanceLastWeek) * 100)
+      : activeMaintenance > 0 ? 100 : 0;
+    
+    // Completed This Month: Logs with endDate in current month
+    const completedThisMonth = await prisma.logMaintenance.count({
+      where: {
+        endDate: {
+          gte: startOfMonth,
+          lte: now
+        }
+      }
+    });
+    
+    // Completed Last Month (for comparison)
+    const completedLastMonth = await prisma.logMaintenance.count({
+      where: {
+        endDate: {
+          gte: startOfLastMonth,
+          lte: endOfLastMonth
+        }
+      }
+    });
+    
+    // Calculate percentage change for Completed This Month
+    const completedChange = completedLastMonth > 0
+      ? Math.round(((completedThisMonth - completedLastMonth) / completedLastMonth) * 100)
+      : completedThisMonth > 0 ? 100 : 0;
+    
+    // Pending Approval: Logs without endDate (assuming these are pending)
+    const pendingApproval = await prisma.logMaintenance.count({
+      where: {
+        endDate: null
+      }
+    });
+    
+    // Pending Approval yesterday (for comparison)
+    const pendingApprovalYesterday = await prisma.logMaintenance.count({
+      where: {
+        endDate: null,
+        startDate: { lte: yesterday }
+      }
+    });
+    
+    // Calculate difference for Pending Approval
+    const pendingDifference = pendingApproval - pendingApprovalYesterday;
+    
+    // Total Cost: Sum of all estimatedCost
+    const totalCostResult = await prisma.logMaintenance.aggregate({
+      _sum: {
+        estimatedCost: true
+      }
+    });
+    
+    const totalCost = totalCostResult._sum.estimatedCost || 0;
+    
+    // Total Cost last month (for comparison)
+    const totalCostLastMonthResult = await prisma.logMaintenance.aggregate({
+      where: {
+        createdAt: {
+          gte: startOfLastMonth,
+          lte: endOfLastMonth
+        }
+      },
+      _sum: {
+        estimatedCost: true
+      }
+    });
+    
+    const totalCostLastMonth = totalCostLastMonthResult._sum.estimatedCost || 0;
+    
+    // Calculate percentage change for Total Cost (comparing with previous period)
+    // For budget comparison, we'll use a simple growth calculation
+    const totalCostChange = totalCostLastMonth > 0
+      ? Math.round(((totalCost - totalCostLastMonth) / totalCostLastMonth) * 100)
+      : totalCost > 0 ? 100 : 0;
+    
+    // Format response
+    return res.status(200).json({
+      success: true,
+      data: {
+        activeMaintenance: {
+          value: activeMaintenance,
+          label: 'Active Maintenance',
+          trend: {
+            direction: activeMaintenanceChange >= 0 ? 'up' : 'down',
+            percentage: Math.abs(activeMaintenanceChange),
+            text: `${Math.abs(activeMaintenanceChange)}% from last week`
+          }
+        },
+        completedThisMonth: {
+          value: completedThisMonth,
+          label: 'Completed This Month',
+          trend: {
+            direction: completedChange >= 0 ? 'up' : 'down',
+            percentage: Math.abs(completedChange),
+            text: `${Math.abs(completedChange)}% ${completedChange >= 0 ? 'increase' : 'decrease'}`
+          }
+        },
+        pendingApproval: {
+          value: pendingApproval,
+          label: 'Pending Approval',
+          trend: {
+            direction: pendingDifference <= 0 ? 'down' : 'up',
+            difference: Math.abs(pendingDifference),
+            text: pendingDifference < 0 
+              ? `${Math.abs(pendingDifference)} less than yesterday`
+              : pendingDifference > 0
+              ? `${pendingDifference} more than yesterday`
+              : 'Same as yesterday'
+          }
+        },
+        totalCost: {
+          value: totalCost.toFixed(2),
+          label: 'Total Cost (SAR)',
+          trend: {
+            direction: totalCostChange >= 0 ? 'up' : 'down',
+            percentage: Math.abs(totalCostChange),
+            text: `${Math.abs(totalCostChange)}% from budget`
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching log maintenance statistics:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 

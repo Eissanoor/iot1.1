@@ -13,6 +13,9 @@ router.post(
 // Get all log maintenance records
 router.get('/', logMaintenanceController.getAllLogMaintenances);
 
+// Get dashboard statistics for log maintenance cards
+router.get('/stats', logMaintenanceController.getLogMaintenanceStats);
+
 // Get a single log maintenance record by ID
 router.get('/:id', logMaintenanceController.getLogMaintenanceById);
 
