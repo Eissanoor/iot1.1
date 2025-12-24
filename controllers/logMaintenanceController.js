@@ -582,4 +582,144 @@ exports.getLogMaintenanceStats = async (req, res) => {
   }
 };
 
+// Get maintenance by category (for bar chart)
+exports.getMaintenanceByCategory = async (req, res) => {
+  try {
+    // Get all log maintenances with their asset categories
+    const logMaintenances = await prisma.logMaintenance.findMany({
+      include: {
+        newAsset: {
+          include: {
+            assetCategory: true
+          }
+        }
+      }
+    });
+
+    // Group by category and count
+    const categoryCounts = {};
+    
+    logMaintenances.forEach(log => {
+      const categoryName = log.newAsset.assetCategory.name;
+      if (!categoryCounts[categoryName]) {
+        categoryCounts[categoryName] = 0;
+      }
+      categoryCounts[categoryName]++;
+    });
+
+    // Convert to array format for chart
+    const chartData = Object.keys(categoryCounts).map(categoryName => ({
+      category: categoryName,
+      count: categoryCounts[categoryName]
+    }));
+
+    // Sort by count descending
+    chartData.sort((a, b) => b.count - a.count);
+
+    // Normalize values to 0-1 range for chart (optional, if frontend needs it)
+    const maxCount = Math.max(...chartData.map(item => item.count), 1);
+    const normalizedData = chartData.map(item => ({
+      ...item,
+      normalizedValue: item.count / maxCount
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        chartData: normalizedData,
+        rawData: chartData
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching maintenance by category:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Get most repaired asset this month
+exports.getMostRepairedAsset = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Get all log maintenances from this month with asset details
+    const logMaintenances = await prisma.logMaintenance.findMany({
+      where: {
+        startDate: {
+          gte: startOfMonth,
+          lte: now
+        }
+      },
+      include: {
+        newAsset: {
+          include: {
+            assetCategory: true
+          }
+        }
+      }
+    });
+
+    // Group by asset and count repairs
+    const assetRepairCounts = {};
+    
+    logMaintenances.forEach(log => {
+      const assetId = log.newAsset.id;
+      const assetName = log.newAsset.name;
+      
+      if (!assetRepairCounts[assetId]) {
+        assetRepairCounts[assetId] = {
+          id: assetId,
+          name: assetName,
+          serialNo: log.newAsset.serialNo,
+          category: log.newAsset.assetCategory.name,
+          repairCount: 0
+        };
+      }
+      assetRepairCounts[assetId].repairCount++;
+    });
+
+    // Convert to array and find the most repaired
+    const assetArray = Object.values(assetRepairCounts);
+    
+    if (assetArray.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          asset: null,
+          repairCount: 0,
+          message: 'No repairs recorded this month'
+        }
+      });
+    }
+
+    // Sort by repair count descending and get the top one
+    assetArray.sort((a, b) => b.repairCount - a.repairCount);
+    const mostRepaired = assetArray[0];
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        asset: {
+          id: mostRepaired.id,
+          name: mostRepaired.name,
+          serialNo: mostRepaired.serialNo,
+          category: mostRepaired.category
+        },
+        repairCount: mostRepaired.repairCount,
+        period: 'this month'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching most repaired asset:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
 
