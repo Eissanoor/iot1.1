@@ -68,6 +68,7 @@ const assetCategoryRoutes = require('./routes/assetCategoryRoutes');
 const newAssetRoutes = require('./routes/newAssetRoutes');
 const newAssetConditionRoutes = require('./routes/newAssetConditionRoutes');
 const logMaintenanceRoutes = require('./routes/logMaintenanceRoutes');
+const assetHistoryRoutes = require('./routes/assetHistoryRoutes');
 
 // Import backup service
 const { scheduleWeeklyBackup } = require('./services/backupService');
@@ -187,6 +188,7 @@ async function startServer() {
     app.use('/api/new-assets', newAssetRoutes);
     app.use('/api/new-asset-conditions', newAssetConditionRoutes);
     app.use('/api/log-maintenance', logMaintenanceRoutes);
+    app.use('/api/asset-history', assetHistoryRoutes);
 
     // Start the server
     app.listen(PORT, () => {
