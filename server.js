@@ -112,6 +112,8 @@ app.use((req, res, next) => {
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve documents from uploads/documents directory
+app.use('/uploads/documents', express.static(path.join(__dirname, 'uploads/documents')));
 
 
 

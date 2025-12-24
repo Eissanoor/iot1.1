@@ -17,6 +17,14 @@ router.get('/department-health-score', newAssetConditionController.getDepartment
 // Get all assets with condition details (for Asset Condition Details page)
 router.get('/assets', newAssetConditionController.getAssetConditionDetails);
 
+// Update asset condition
+// Expects multipart/form-data with optional 'files' field for multiple file uploads
+router.put(
+  '/assets/:id/condition',
+  newAssetConditionController.uploadInspectionFiles,
+  newAssetConditionController.updateAssetCondition
+);
+
 // Get single asset condition detail by ID
 router.get('/assets/:id', newAssetConditionController.getAssetConditionDetailById);
 

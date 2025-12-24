@@ -1,4 +1,8 @@
 const prisma = require('../prisma/client');
+const { uploadDocuments } = require('../utils/uploadUtils');
+
+// Middleware for handling multiple file uploads (photos/documents)
+exports.uploadInspectionFiles = uploadDocuments.array('files', 10); // Allow up to 10 files
 
 /**
  * Get statistics for asset condition cards
@@ -1447,6 +1451,172 @@ exports.getFilterOptions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch filter options',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update asset condition
+ * Updates the asset's condition, inspection details, and related information
+ * Supports file uploads for photos/documents
+ */
+exports.updateAssetCondition = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      currentCondition, // assetConditionId
+      conditionScore, // 0-100
+      inspectionDate, // required
+      inspectedBy, // employeeId (inspector)
+      inspectionNotes, // notes
+      maintenanceRequired, // Yes/No
+      nextInspectionDue, // date
+      assetName, // optional new asset name
+      name // optional new asset name (alternate key)
+    } = req.body;
+
+    // Validate required fields
+    if (!currentCondition || !inspectionDate || !inspectedBy) {
+      return res.status(400).json({
+        success: false,
+        message: 'Required fields: currentCondition (assetConditionId), inspectionDate, inspectedBy (employeeId)'
+      });
+    }
+
+    // Check if asset exists
+    const asset = await prisma.newAsset.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        assetCondition: true,
+        employee: true
+      }
+    });
+
+    if (!asset) {
+      return res.status(404).json({
+        success: false,
+        message: 'Asset not found'
+      });
+    }
+
+    // Validate asset condition exists
+    const assetCondition = await prisma.assetCondition.findUnique({
+      where: { id: parseInt(currentCondition, 10) }
+    });
+
+    if (!assetCondition) {
+      return res.status(404).json({
+        success: false,
+        message: 'Asset condition not found'
+      });
+    }
+
+    // Validate inspector (employee) exists
+    const inspector = await prisma.employeeList.findUnique({
+      where: { id: parseInt(inspectedBy, 10) }
+    });
+
+    if (!inspector) {
+      return res.status(404).json({
+        success: false,
+        message: 'Inspector (employee) not found'
+      });
+    }
+
+    // Validate condition score if provided
+    if (conditionScore !== undefined) {
+      const score = parseInt(conditionScore, 10);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Condition score must be between 0 and 100'
+        });
+      }
+    }
+
+    // Handle file uploads (photos/documents)
+    const uploadedFiles = [];
+    const { getDocumentUrl } = require('../utils/uploadUtils');
+    
+    if (req.files && req.files.length > 0) {
+      // Handle multiple files (all go to documents directory)
+      req.files.forEach(file => {
+        uploadedFiles.push(getDocumentUrl(file.filename));
+      });
+    } else if (req.file) {
+      // Handle single file
+      uploadedFiles.push(getDocumentUrl(req.file.filename));
+    }
+
+    // Parse dates
+    const parsedInspectionDate = new Date(inspectionDate);
+    const parsedNextInspectionDue = nextInspectionDue ? new Date(nextInspectionDue) : null;
+
+    // Build description with inspection notes
+    let updatedDescription = asset.description || '';
+    if (inspectionNotes) {
+      const inspectionEntry = `\n\n[Inspection ${new Date().toISOString()}]\nInspected By: ${inspector.firstName} ${inspector.lastName}\nCondition Score: ${conditionScore || 'N/A'}\nNotes: ${inspectionNotes}\nMaintenance Required: ${maintenanceRequired || 'No'}`;
+      updatedDescription = updatedDescription + inspectionEntry;
+    }
+
+    // Decide final name if provided (supports both assetName and name keys)
+    const newName =
+      assetName !== undefined
+        ? assetName
+        : name !== undefined
+        ? name
+        : asset.name;
+
+    // Update asset
+    const updatedAsset = await prisma.newAsset.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        name: newName,
+        assetConditionId: parseInt(currentCondition, 10),
+        description: updatedDescription,
+        updatedAt: parsedInspectionDate, // Use inspection date as updatedAt
+        // Note: Additional fields like conditionScore, maintenanceRequired, nextInspectionDue
+        // would need to be added to the schema. For now, storing in description.
+      },
+      include: {
+        assetCategory: true,
+        department: true,
+        employee: true,
+        assetCondition: true,
+        location: true
+      }
+    });
+
+    // Prepare response with all inspection details
+    const response = {
+      success: true,
+      message: 'Asset condition updated successfully',
+      data: {
+        asset: updatedAsset,
+        inspection: {
+          assetName: updatedAsset.name,
+          inspectionDate: parsedInspectionDate,
+          inspectedBy: {
+            id: inspector.id,
+            name: `${inspector.firstName} ${inspector.lastName}`,
+            email: inspector.email
+          },
+          conditionScore: conditionScore ? parseInt(conditionScore, 10) : null,
+          inspectionNotes: inspectionNotes || null,
+          maintenanceRequired: maintenanceRequired || 'No',
+          nextInspectionDue: parsedNextInspectionDue,
+          uploadedFiles: uploadedFiles.length > 0 ? uploadedFiles : null
+        }
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error updating asset condition:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update asset condition',
       error: error.message
     });
   }
