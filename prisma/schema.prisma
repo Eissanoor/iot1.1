@@ -937,6 +937,7 @@ model NewAsset {
 
   // Relations
   logMaintenances  LogMaintenance[]
+  customEvents     CustomEvent[]
 }
 
 model LogMaintenance {
@@ -960,4 +961,25 @@ model LogMaintenance {
 
   technicianId Int
   technician   Technician  @relation(fields: [technicianId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// CustomEvent model for asset history custom events
+model CustomEvent {
+  id          Int      @id @default(autoincrement())
+  eventTitle  String   @db.NVarChar(255)
+  eventType   String   @db.NVarChar(50) // MAINTENANCE, INSPECTION, FUEL, ISSUE, ASSIGNMENT, TRANSFER, UPDATE, or custom
+  description String?  @db.NVarChar(Max)
+  eventDate   DateTime
+  attachments String?  @db.NVarChar(Max) // JSON array of file paths
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  newAssetId Int
+  newAsset   NewAsset @relation(fields: [newAssetId], references: [id], onDelete: Cascade)
+
+  createdByUserId String? // Optional: user who created the event
+  createdByAdminId String? // Optional: admin who created the event
+
+  @@map("custom_events")
 }

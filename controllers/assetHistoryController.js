@@ -241,6 +241,53 @@ exports.getAssetHistory = async (req, res) => {
       }
     }
 
+    // 7. CUSTOM events from CustomEvent model
+    // Include custom events if:
+    // - No eventType filter (show all)
+    // - eventType matches the custom event's eventType
+    // - eventType is 'CUSTOM' (show all custom events)
+    const shouldIncludeCustomEvents = !eventType || eventType === 'CUSTOM' || 
+      ['MAINTENANCE', 'INSPECTION', 'FUEL', 'ISSUE', 'ASSIGNMENT', 'TRANSFER', 'UPDATE'].includes(eventType);
+
+    if (shouldIncludeCustomEvents) {
+      const customEventWhere = {
+        newAssetId: parseInt(assetId)
+      };
+
+      // Filter by event type if specified and not 'CUSTOM'
+      if (eventType && eventType !== 'CUSTOM') {
+        customEventWhere.eventType = eventType;
+      }
+
+      if (Object.keys(dateFilter).length > 0) {
+        customEventWhere.eventDate = dateFilter;
+      }
+
+      const customEvents = await prisma.customEvent.findMany({
+        where: customEventWhere,
+        orderBy: { eventDate: sortOrder === 'newest' ? 'desc' : 'asc' }
+      });
+
+      customEvents.forEach(customEvent => {
+        const attachments = customEvent.attachments ? JSON.parse(customEvent.attachments) : [];
+        events.push({
+          id: `CUSTOM-${customEvent.id}`,
+          eventType: customEvent.eventType,
+          title: customEvent.eventTitle,
+          details: customEvent.description || 'Custom event',
+          performer: {
+            id: customEvent.createdByUserId || customEvent.createdByAdminId || null,
+            name: customEvent.createdByUserId ? 'User' : customEvent.createdByAdminId ? 'Admin' : 'System',
+            initials: customEvent.createdByUserId ? 'USR' : customEvent.createdByAdminId ? 'ADM' : 'SYS'
+          },
+          date: customEvent.eventDate,
+          reference: `CE-${customEvent.id}`,
+          attachments: attachments.length > 0 ? attachments : null,
+          rawData: customEvent
+        });
+      });
+    }
+
     // Sort events by date
     events.sort((a, b) => {
       const dateA = new Date(a.date);
@@ -310,7 +357,21 @@ exports.getEventDistribution = async (req, res) => {
     if (startDate) dateFilter.gte = new Date(startDate);
     if (endDate) dateFilter.lte = new Date(endDate);
 
-    const [maintenanceCount, inspectionCount, issueCount, assignmentCount, transferCount, updateCount] = await Promise.all([
+    const customEventWhere = {
+      newAssetId: parseInt(assetId),
+      ...(Object.keys(dateFilter).length > 0 && { eventDate: dateFilter })
+    };
+
+    // Get maintenance issues count
+    const maintenanceIssuesCount = await prisma.logMaintenance.count({
+      where: {
+        newAssetId: parseInt(assetId),
+        priorityLevel: { in: ['HIGH', 'CRITICAL', 'URGENT'] },
+        ...(Object.keys(dateFilter).length > 0 && { startDate: dateFilter })
+      }
+    });
+
+    const [maintenanceCount, inspectionCount, customIssueCount, assignmentCount, transferCount, updateCount, customEvents] = await Promise.all([
       // Maintenance count
       prisma.logMaintenance.count({
         where: {
@@ -318,43 +379,81 @@ exports.getEventDistribution = async (req, res) => {
           ...(Object.keys(dateFilter).length > 0 && { startDate: dateFilter })
         }
       }),
-      // Inspection count (simplified - based on condition updates)
-      1, // Placeholder - you might want to add an Inspection model
-      // Issue count (high priority maintenances)
-      prisma.logMaintenance.count({
+      // Inspection count (from custom events with type INSPECTION)
+      prisma.customEvent.count({
         where: {
-          newAssetId: parseInt(assetId),
-          priorityLevel: { in: ['HIGH', 'CRITICAL', 'URGENT'] },
-          ...(Object.keys(dateFilter).length > 0 && { startDate: dateFilter })
+          ...customEventWhere,
+          eventType: 'INSPECTION'
         }
       }),
-      // Assignment count (asset creation/assignment)
-      1, // Placeholder
-      // Transfer count
-      1, // Placeholder
-      // Update count
-      1 // Placeholder
+      // Issue count (from custom events with type ISSUE)
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'ISSUE'
+        }
+      }),
+      // Assignment count (from custom events)
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'ASSIGNMENT'
+        }
+      }),
+      // Transfer count (from custom events)
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'TRANSFER'
+        }
+      }),
+      // Update count (from custom events)
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'UPDATE'
+        }
+      }),
+      // Get all custom events to count by type
+      prisma.customEvent.findMany({
+        where: customEventWhere,
+        select: { eventType: true }
+      })
     ]);
 
-    const total = maintenanceCount + inspectionCount + issueCount + assignmentCount + transferCount + updateCount;
+    // Total issue count (maintenance issues + custom issue events)
+    const issueCount = maintenanceIssuesCount + customIssueCount;
+
+    // Count custom events by type
+    const customEventCounts = {};
+    customEvents.forEach(event => {
+      customEventCounts[event.eventType] = (customEventCounts[event.eventType] || 0) + 1;
+    });
+
+    // Add custom maintenance events to maintenance count
+    const totalMaintenanceCount = maintenanceCount + (customEventCounts['MAINTENANCE'] || 0);
+    const totalInspectionCount = inspectionCount + (customEventCounts['INSPECTION'] || 0);
+    const totalFuelCount = customEventCounts['FUEL'] || 0;
+
+    const total = totalMaintenanceCount + totalInspectionCount + totalFuelCount + issueCount + assignmentCount + transferCount + updateCount;
 
     const distribution = [
       {
         type: 'Inspection',
-        count: inspectionCount,
-        percentage: total > 0 ? ((inspectionCount / total) * 100).toFixed(1) : 0,
+        count: totalInspectionCount,
+        percentage: total > 0 ? ((totalInspectionCount / total) * 100).toFixed(1) : 0,
         color: '#3B82F6' // Blue
       },
       {
         type: 'Maintenance',
-        count: maintenanceCount,
-        percentage: total > 0 ? ((maintenanceCount / total) * 100).toFixed(1) : 0,
+        count: totalMaintenanceCount,
+        percentage: total > 0 ? ((totalMaintenanceCount / total) * 100).toFixed(1) : 0,
         color: '#F97316' // Orange
       },
       {
         type: 'Fuel',
-        count: 0, // Placeholder - you might need to link FuelLevel to assets
-        percentage: 0,
+        count: totalFuelCount,
+        percentage: total > 0 ? ((totalFuelCount / total) * 100).toFixed(1) : 0,
         color: '#10B981' // Green
       },
       {
@@ -435,12 +534,34 @@ exports.getSummaryStatistics = async (req, res) => {
       })
     ]);
 
+    // Get custom events count
+    const customEventWhere = {
+      newAssetId: parseInt(assetId),
+      ...(Object.keys(dateFilter).length > 0 && { eventDate: dateFilter })
+    };
+
+    const [customEventsCount, customInspectionsCount, customFuelCount] = await Promise.all([
+      prisma.customEvent.count({ where: customEventWhere }),
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'INSPECTION'
+        }
+      }),
+      prisma.customEvent.count({
+        where: {
+          ...customEventWhere,
+          eventType: 'FUEL'
+        }
+      })
+    ]);
+
     // Calculate counts
     const maintenances = allMaintenances;
     const issues = highPriorityMaintenances;
-    const inspections = 0; // Placeholder - add Inspection model if needed
-    const fuelEntries = 0; // Placeholder - link FuelLevel to assets if needed
-    const totalEvents = maintenances + inspections + fuelEntries;
+    const inspections = customInspectionsCount; // From custom events
+    const fuelEntries = customFuelCount; // From custom events
+    const totalEvents = maintenances + inspections + fuelEntries + customEventsCount;
 
     res.status(200).json({
       success: true,
