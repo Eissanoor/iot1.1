@@ -723,3 +723,166 @@ exports.getMostRepairedAsset = async (req, res) => {
   }
 };
 
+// Get recent maintenance logs
+exports.getRecentMaintenance = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 5; // Default to 5 recent items
+    
+    // Get recent log maintenances ordered by startDate descending
+    const logMaintenances = await prisma.logMaintenance.findMany({
+      take: limit,
+      orderBy: { startDate: 'desc' },
+      include: {
+        newAsset: {
+          include: {
+            assetCategory: true
+          }
+        },
+        technician: true
+      }
+    });
+
+    // Format the data for the frontend
+    const recentMaintenance = logMaintenances.map(log => {
+      const now = new Date();
+      let status = 'Scheduled';
+      
+      // Determine status based on dates
+      if (!log.endDate) {
+        // No end date means it's pending
+        if (log.startDate > now) {
+          status = 'Scheduled';
+        } else {
+          status = 'Pending';
+        }
+      } else {
+        const endDate = new Date(log.endDate);
+        if (endDate < now) {
+          status = 'Completed';
+        } else if (log.startDate <= now && endDate >= now) {
+          status = 'In Progress';
+        } else {
+          status = 'Scheduled';
+        }
+      }
+
+      // Format date
+      const date = new Date(log.startDate);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      return {
+        id: log.id,
+        assetName: log.newAsset.name,
+        assetId: log.newAsset.id,
+        serialNo: log.newAsset.serialNo,
+        category: log.newAsset.assetCategory.name,
+        status: status,
+        date: formattedDate,
+        startDate: log.startDate,
+        endDate: log.endDate,
+        priorityLevel: log.priorityLevel,
+        technician: log.technician ? {
+          id: log.technician.id,
+          name: log.technician.name_en
+        } : null
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: recentMaintenance,
+      count: recentMaintenance.length
+    });
+  } catch (error) {
+    console.error('Error fetching recent maintenance:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Get average downtime (mean repair duration)
+exports.getAvgDowntime = async (req, res) => {
+  try {
+    // Get all completed maintenances (those with endDate)
+    const completedMaintenances = await prisma.logMaintenance.findMany({
+      where: {
+        endDate: {
+          not: null
+        }
+      },
+      select: {
+        startDate: true,
+        endDate: true
+      }
+    });
+
+    if (completedMaintenances.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          avgDowntimeDays: 0,
+          avgDowntimeHours: 0,
+          formattedValue: '0 days',
+          totalRepairs: 0,
+          message: 'No completed repairs to calculate average downtime'
+        }
+      });
+    }
+
+    // Calculate downtime for each completed maintenance
+    const downtimes = completedMaintenances.map(log => {
+      const start = new Date(log.startDate);
+      const end = new Date(log.endDate);
+      const diffMs = end - start;
+      return diffMs; // Difference in milliseconds
+    });
+
+    // Calculate average downtime in milliseconds
+    const totalDowntimeMs = downtimes.reduce((sum, downtime) => sum + downtime, 0);
+    const avgDowntimeMs = totalDowntimeMs / downtimes.length;
+
+    // Convert to days
+    const avgDowntimeDays = avgDowntimeMs / (1000 * 60 * 60 * 24);
+    const avgDowntimeHours = avgDowntimeMs / (1000 * 60 * 60);
+
+    // Format the value
+    let formattedValue;
+    if (avgDowntimeDays < 1) {
+      formattedValue = `${avgDowntimeHours.toFixed(1)} hours`;
+    } else {
+      formattedValue = `${avgDowntimeDays.toFixed(1)} days`;
+    }
+
+    // Additional statistics
+    const minDowntimeDays = Math.min(...downtimes.map(d => d / (1000 * 60 * 60 * 24)));
+    const maxDowntimeDays = Math.max(...downtimes.map(d => d / (1000 * 60 * 60 * 24)));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        avgDowntimeDays: parseFloat(avgDowntimeDays.toFixed(2)),
+        avgDowntimeHours: parseFloat(avgDowntimeHours.toFixed(2)),
+        formattedValue: formattedValue,
+        totalRepairs: completedMaintenances.length,
+        minDowntimeDays: parseFloat(minDowntimeDays.toFixed(2)),
+        maxDowntimeDays: parseFloat(maxDowntimeDays.toFixed(2)),
+        label: 'Mean repair duration'
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating average downtime:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+

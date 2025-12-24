@@ -22,6 +22,12 @@ router.get('/by-category', logMaintenanceController.getMaintenanceByCategory);
 // Get most repaired asset this month
 router.get('/most-repaired', logMaintenanceController.getMostRepairedAsset);
 
+// Get recent maintenance logs
+router.get('/recent', logMaintenanceController.getRecentMaintenance);
+
+// Get average downtime
+router.get('/avg-downtime', logMaintenanceController.getAvgDowntime);
+
 // Get a single log maintenance record by ID
 router.get('/:id', logMaintenanceController.getLogMaintenanceById);
 
