@@ -823,6 +823,7 @@ model Technician {
   
   // Relations
   maintenances Maintenance[] // One-to-many relationship with Maintenance
+  logMaintenances LogMaintenance[]
 }
 
 model Maintenance {
@@ -842,6 +843,8 @@ model Maintenance {
   
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  logMaintenances LogMaintenance[]
 }
 
 // ManageLocation model
@@ -931,4 +934,30 @@ model NewAsset {
 
   locationId       Int
   location         Location        @relation(fields: [locationId], references: [id])
+
+  // Relations
+  logMaintenances  LogMaintenance[]
+}
+
+model LogMaintenance {
+  id               Int      @id @default(autoincrement())
+  issueDescription String
+  priorityLevel    String
+  startDate        DateTime
+  endDate          DateTime?
+  estimatedCost    Float?
+  currentCondition String?
+  additionalNotes  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  newAssetId   Int
+  newAsset     NewAsset     @relation(fields: [newAssetId], references: [id])
+
+  maintenanceId Int
+  maintenance   Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  technicianId Int
+  technician   Technician  @relation(fields: [technicianId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
