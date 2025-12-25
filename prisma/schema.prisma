@@ -349,6 +349,37 @@ model MainCategoryManagement {
   @@index([parentCategoryId])
 }
 
+// MainFooter model
+model MainFooter {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    String   @default("active") @db.NVarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// SubFooter model
+model SubFooter {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    String   @default("active") @db.NVarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// FooterItem model
+model FooterItem {
+  id              Int      @id @default(autoincrement())
+  name            String
+  url             String?  @db.NVarChar(500)
+  openIn          String?  @db.NVarChar(20) // e.g., "_blank", "_self", "_parent", "_top"
+  icon            String?  // Path to the icon file
+  description     String?  @db.NVarChar(Max)
+  roleVisibility  String?  @db.NVarChar(Max) // JSON string or comma-separated role IDs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 // Location model
 model Location {
   id           Int       @id @default(autoincrement())

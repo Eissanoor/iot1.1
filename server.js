@@ -72,6 +72,9 @@ const assetHistoryRoutes = require('./routes/assetHistoryRoutes');
 const customEventRoutes = require('./routes/customEventRoutes');
 const categoryManagementTypeRoutes = require('./routes/categoryManagementTypeRoutes');
 const mainCategoryManagementRoutes = require('./routes/mainCategoryManagementRoutes');
+const mainFooterRoutes = require('./routes/mainFooterRoutes');
+const subFooterRoutes = require('./routes/subFooterRoutes');
+const footerItemRoutes = require('./routes/footerItemRoutes');
 
 // Import backup service
 const { scheduleWeeklyBackup } = require('./services/backupService');
@@ -195,6 +198,9 @@ async function startServer() {
     app.use('/api/custom-events', customEventRoutes);
     app.use('/api/category-management-types', categoryManagementTypeRoutes);
     app.use('/api/main-category-managements', mainCategoryManagementRoutes);
+    app.use('/api/main-footers', mainFooterRoutes);
+    app.use('/api/sub-footers', subFooterRoutes);
+    app.use('/api/footer-items', footerItemRoutes);
 
     // Start the server
     app.listen(PORT, () => {
