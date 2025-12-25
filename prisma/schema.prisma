@@ -1056,3 +1056,56 @@ model CustomEvent {
 
   @@map("custom_events")
 }
+
+// Slider model
+model Slider {
+  id              Int      @id @default(autoincrement())
+  name            String
+  assignPage      String?  @db.NVarChar(255)
+  displayPosition String?  @db.NVarChar(100)
+  transitionStyle String?  @db.NVarChar(100)
+  transitionTime  Int?     // Transition time in milliseconds
+  slideDuration   Int?     // Slide duration in milliseconds
+  navigationStyle String?  @db.NVarChar(100)
+  slideOption     String?  @db.NVarChar(Max) // JSON string or text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  sliderContents  SliderContent[] // One-to-many relationship with SliderContent
+}
+
+// SliderContent model
+model SliderContent {
+  id                Int      @id @default(autoincrement())
+  name              String
+  subTitle          String?  @db.NVarChar(Max)
+  buttonText        String?  @db.NVarChar(255)
+  buttonLink        String?  @db.NVarChar(500)
+  backgroundImage   String?  // Path to the background image file
+  textAlignment     String?  @db.NVarChar(50) // left, center, right
+  textColor         String?  @db.NVarChar(50) // Hex color code
+  overlayColor      String?  @db.NVarChar(50) // Hex color code with opacity
+  buttonStyle       String?  @db.NVarChar(Max) // JSON string or text
+  contentPosition   String?  @db.NVarChar(100) // top-left, top-center, center, etc.
+  titleAnimation    String?  @db.NVarChar(100) // fadeIn, slideIn, zoomIn, etc.
+  subTitleAnimation String?  @db.NVarChar(100)
+  buttonAnimation   String?  @db.NVarChar(100)
+  animationDelay    Int?     // Animation delay in milliseconds
+  animationDuration Int?     // Animation duration in milliseconds
+  staggerChildren   Boolean  @default(false) // Stagger children animations
+  visibility        Boolean  @default(true) // Show/hide the content
+  schedule          String?  @db.NVarChar(Max) // JSON string for scheduling
+  status            String   @default("active") @db.NVarChar(20) // active, inactive
+  slideOrder        Int      @default(0) // Order of the slide
+  customCSSClass    String?  @db.NVarChar(255) // Custom CSS class names
+  additionalSettings String? @db.NVarChar(Max) // JSON string for additional settings
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  sliderId          Int
+  slider            Slider   @relation(fields: [sliderId], references: [id], onDelete: Cascade)
+  
+  @@index([sliderId])
+}

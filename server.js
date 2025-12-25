@@ -75,6 +75,8 @@ const mainCategoryManagementRoutes = require('./routes/mainCategoryManagementRou
 const mainFooterRoutes = require('./routes/mainFooterRoutes');
 const subFooterRoutes = require('./routes/subFooterRoutes');
 const footerItemRoutes = require('./routes/footerItemRoutes');
+const sliderRoutes = require('./routes/sliderRoutes');
+const sliderContentRoutes = require('./routes/sliderContentRoutes');
 
 // Import backup service
 const { scheduleWeeklyBackup } = require('./services/backupService');
@@ -201,6 +203,8 @@ async function startServer() {
     app.use('/api/main-footers', mainFooterRoutes);
     app.use('/api/sub-footers', subFooterRoutes);
     app.use('/api/footer-items', footerItemRoutes);
+    app.use('/api/sliders', sliderRoutes);
+    app.use('/api/slider-contents', sliderContentRoutes);
 
     // Start the server
     app.listen(PORT, () => {
