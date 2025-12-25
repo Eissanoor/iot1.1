@@ -307,6 +307,48 @@ model SubCategory {
   @@unique([name, categoryId]) // Ensure subcategory names are unique within a category
 }
 
+// CategoryManagementType model
+model CategoryManagementType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    String   @default("active") @db.NVarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  mainCategoryManagements MainCategoryManagement[] // One-to-many relationship with MainCategoryManagement
+}
+
+// MainCategoryManagement model
+model MainCategoryManagement {
+  id                        Int      @id @default(autoincrement())
+  name                      String
+  status                    String   @default("active") @db.NVarChar(20)
+  slugOrUrl                 String?  @db.NVarChar(255)
+  description               String?  @db.NVarChar(Max)
+  displayOrder              Int      @default(0)
+  icon                      String?  // Path to the icon file
+  tagColor                  String?  @db.NVarChar(50)
+  roleVisibility            String?  @db.NVarChar(Max) // JSON string or comma-separated role IDs
+  linkedPage                String?  @db.NVarChar(255)
+  seoTitle                  String?  @db.NVarChar(255)
+  seoDescription            String?  @db.NVarChar(Max)
+  displayLayout             String?  @db.NVarChar(50)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  
+  // Relations
+  categoryManagementTypeId  Int
+  categoryManagementType    CategoryManagementType @relation(fields: [categoryManagementTypeId], references: [id], onDelete: Cascade)
+  
+  parentCategoryId          Int?
+  parentCategory            MainCategoryManagement? @relation("ParentCategory", fields: [parentCategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childCategories           MainCategoryManagement[] @relation("ParentCategory")
+  
+  @@index([categoryManagementTypeId])
+  @@index([parentCategoryId])
+}
+
 // Location model
 model Location {
   id           Int       @id @default(autoincrement())
